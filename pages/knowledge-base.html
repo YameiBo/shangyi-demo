@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" href="data:," />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>知识库  - 上医科研样本库信息化平台</title>
+<link rel="stylesheet" href="../assets/styles.css" />
+<link rel="stylesheet" href="../assets/agent-widget.css" />
+<link rel="stylesheet" href="../assets/platform-modules.css" />
+<style>
+  .kb-main-tabs { margin-bottom: 16px; }
+  .kb-panel { display: none; }
+  .kb-panel.active { display: block; }
+
+  .kb-layout { display: grid; grid-template-columns: 224px minmax(0, 1fr); gap: 16px; align-items: start; }
+  .kb-side { padding: 14px 10px; }
+  .kb-side .card-header { padding: 0 8px; margin-bottom: 8px; }
+  .kb-side-list { display: flex; flex-direction: column; gap: 2px; }
+  .kb-side-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: background .15s, color .15s; }
+  .kb-side-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .kb-side-item.active { background: var(--primary-lighter); color: var(--primary); font-weight: 500; }
+  .kb-side-item b { margin-left: auto; font-size: 11.5px; font-weight: 500; color: var(--text-tertiary); }
+  .kb-side-item.active b { color: var(--primary); }
+  .kb-side-sub { padding-left: 28px; font-size: 12.5px; }
+  .kb-side-divider { height: 1px; background: var(--border-light); margin: 8px 8px; }
+
+  .kb-manage-card { padding: 0; overflow: hidden; }
+  .kb-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-light); flex-wrap: wrap; }
+  .kb-toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .kb-toolbar .select { width: 110px; }
+  .kb-toolbar .search-box { width: 220px; }
+  .kb-table th:first-child, .kb-table td:first-child { width: 42px; padding-right: 4px; }
+  .kb-name { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+  .kb-name .ico { width: 26px; height: 26px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary-lighter); font-size: 14px; flex-shrink: 0; }
+  .kb-desc { color: var(--text-tertiary); font-size: 12.5px; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kb-time { color: var(--text-tertiary); font-size: 12.5px; white-space: nowrap; }
+  .kb-table .col-actions { width: 160px; }
+  .kb-empty { padding: 36px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
+
+  .kb-doc-card { padding: 0; overflow: hidden; }
+  .kb-doc-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border-light); flex-wrap: wrap; }
+  .kb-back { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; color: var(--text-secondary); font-size: 13px; cursor: pointer; }
+  .kb-back:hover { background: var(--bg-hover); color: var(--primary); }
+  .kb-doc-title { font-size: 16px; font-weight: 600; }
+  .kb-doc-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+  .kb-doc-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .kb-folder-tabs { padding: 0 18px; margin-bottom: 0; overflow-x: auto; }
+  .kb-folder-tabs .tab { white-space: nowrap; }
+  .kb-count { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 8px; background: var(--bg-disabled); color: var(--text-tertiary); font-size: 11px; text-align: center; }
+  .kb-folder-tabs .tab.active .kb-count { background: var(--primary-light); color: var(--primary); }
+  .kb-doc-table th:first-child, .kb-doc-table td:first-child { width: 42px; padding-right: 4px; }
+  .kb-file { display: flex; align-items: center; gap: 9px; }
+  .kb-file .ico { width: 26px; height: 26px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary-lighter); font-size: 14px; flex-shrink: 0; }
+  .kb-file .ico.folder { background: #FFF6E5; }
+  .kb-folder-name { font-weight: 500; }
+  .kb-doc-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
+
+  .kb-kpi { padding: 16px 18px; }
+  .kb-kpi .stat-label { font-size: 12.5px; color: var(--text-tertiary); }
+  .kb-kpi .stat-value { margin-top: 6px; font-size: 26px; font-weight: 700; line-height: 1.15; }
+  .kb-kpi .stat-value small { font-size: 12px; font-weight: 500; color: var(--text-tertiary); margin-left: 4px; }
+  .kb-kpi .stat-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+  .kb-kpi .stat-meta .pos { color: var(--success); }
+  .kb-kpi .stat-meta .neg { color: var(--error); }
+  .kb-kpi-ico { width: 34px; height: 34px; border-radius: 8px; background: var(--primary-lighter); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-size: 17px; margin-bottom: 10px; }
+
+  .kb-bars { display: flex; flex-direction: column; gap: 12px; }
+  .kb-bar-row { display: grid; grid-template-columns: 116px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font-size: 12.5px; }
+  .kb-bar-row > span { color: var(--text-secondary); }
+  .kb-bar-row > b { text-align: right; color: var(--text-primary); font-weight: 600; }
+  .kb-bar-track { height: 8px; border-radius: 999px; background: var(--bg-disabled); overflow: hidden; }
+  .kb-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #2B7FFF, #6BA6FF); }
+  .kb-bar-fill.cyan { background: linear-gradient(90deg, #0FC6C2, #6EE7E4); }
+  .kb-bar-fill.violet { background: linear-gradient(90deg, #722ED1, #A875F0); }
+  .kb-bar-fill.ochre { background: linear-gradient(90deg, #FF7D00, #FFB84D); }
+
+  .kb-graph-flex { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+  .kb-donut { position: relative; width: 156px; height: 156px; border-radius: 50%; flex-shrink: 0; background: conic-gradient(#2B7FFF 0 30%, #0FC6C2 30% 54%, #722ED1 54% 68%, #FF7D00 68% 79%, #00B42A 79% 86%, #C9CDD4 86% 100%); }
+  .kb-donut::after { content: ""; position: absolute; inset: 24px; border-radius: 50%; background: #fff; }
+  .kb-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; }
+  .kb-donut-center b { font-size: 24px; line-height: 1.1; }
+  .kb-donut-center span { font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
+  .kb-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; flex: 1; min-width: 220px; }
+  .kb-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); }
+  .kb-legend-item i { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .kb-legend-item b { margin-left: auto; color: var(--text-primary); font-weight: 600; }
+
+  .kb-health { display: flex; flex-direction: column; gap: 14px; }
+  .kb-health-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) 42px; align-items: center; gap: 10px; font-size: 12.5px; }
+  .kb-health-row > span { color: var(--text-secondary); }
+  .kb-health-row > b { text-align: right; font-size: 12.5px; }
+  .kb-health-row .progress { height: 7px; }
+
+  .kb-update-list { display: flex; flex-direction: column; }
+  .kb-update-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 12.5px; }
+  .kb-update-item:last-child { border-bottom: none; }
+  .kb-update-item .dot { margin-top: 6px; }
+  .kb-update-item b { display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .kb-update-item span { color: var(--text-tertiary); }
+
+  .kb-coverage { display: flex; flex-wrap: wrap; gap: 8px; }
+  .kb-coverage .filter-chip { cursor: default; }
+  .kb-coverage .filter-chip:hover { color: var(--text-secondary); border-color: var(--border); }
+
+  .kb-life-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .kb-life-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--border-light); font-size: 12.5px; color: var(--text-secondary); }
+  .kb-life-pill b { color: var(--text-primary); }
+  .kb-life-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+
+  .kb-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kb-flow-card { position: relative; background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px 16px 12px; min-height: 132px; }
+  .kb-flow-card:hover { border-color: var(--primary-200); box-shadow: var(--shadow-sm); }
+  .kb-flow-card.current { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(43,127,255,.1); }
+  .kb-flow-no { position: absolute; top: 12px; right: 14px; font-size: 11px; font-weight: 700; color: var(--text-placeholder); letter-spacing: .5px; }
+  .kb-flow-ico { width: 30px; height: 30px; border-radius: 8px; background: var(--primary-lighter); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 8px; }
+  .kb-flow-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .kb-flow-meta { font-size: 12px; color: var(--text-tertiary); line-height: 1.5; }
+  .kb-flow-card .tag { position: absolute; right: 14px; bottom: 12px; }
+  .kb-flow-card.current .kb-flow-ico { background: var(--primary); color: #fff; }
+
+  .kb-life-card { padding: 0; overflow: hidden; }
+  .kb-life-card .card-header { padding: 16px 20px 0; margin-bottom: 12px; }
+  .kb-life-table .col-actions { width: 140px; }
+  .kb-life-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
+
+  @media (max-width: 1280px) {
+    .kb-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kb-layout { grid-template-columns: 200px minmax(0, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .kb-layout { grid-template-columns: 1fr; }
+    .kb-flow { grid-template-columns: 1fr; }
+    .kb-doc-actions { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">◈</div>
+      <div class="sidebar-title">上医科研样本库<br>信息化平台</div>
+      <div class="sidebar-collapse-btn">⤢</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" href="http://192.168.77.144:20080/package1/chat"><span class="icon">◉</span>AI智能问答</a>
+      <a class="sidebar-item active" href="knowledge-base.html"><span class="icon">⚡</span>知识库</a>
+      <a class="sidebar-item" href="http://192.168.77.144:20080/package1/kg"><span class="icon">◇</span>知识图谱</a>
+      <!-- 智能分析：按需求去掉（2026-09-23）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
+      <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">⚙</span>智能分析</a> -->
+
+      <!-- ========== 迎检模块 · 三级菜单（2026-09-23 重构） ==========
+           一级「CNAS 迎检认可」是行式菜单，点击折叠整个模块；
+           二级＝迎检总览 + 四个分组头（同一视觉层级）；三级＝各分组子页。
+           分组顺序即业务流程：筹备 → 条款 → 材料 → 档案。
+           缩进与引导线由 styles.css 的 .sidebar-level1 / .sidebar-l2 /
+           .sidebar-l3 表达（12 → 26 → 44px），不靠 DOM 嵌套深度。
+           折叠态由 app.js 以 class "collapsed" 加在被折叠块的父级上：
+           一级加在 .sidebar-module，二级分组加在 .sidebar-group。 -->
+      <div class="sidebar-module">
+        <div class="sidebar-level1">
+          <span class="icon">🏛</span>
+          <span>CNAS 迎检认可</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sidebar-module-body">
+          <a class="sidebar-item sidebar-l2" href="review-list.html"><span class="icon">📋</span>评审列表</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="../index.html"><span class="icon">⌂</span>迎检总览</a>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📋</span>
+              <span>迎检筹备</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="task-config.html"><span class="icon">⊕</span>任务分配</a>
+              <a class="sidebar-item sidebar-l3" href="checklist.html"><span class="icon">✓</span>检查清单</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📚</span>
+              <span>条款管理</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="clause-library.html"><span class="icon">≡</span>CNAS 条款库</a>
+              <a class="sidebar-item sidebar-l3" href="self-assessment.html"><span class="icon">☐</span>条款自评</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">🗂️</span>
+              <span>证据材料中心</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="archive.html"><span class="icon">📁</span>材料智能归档</a>
+              <a class="sidebar-item sidebar-l3" href="version.html"><span class="icon">↻</span>版本管理</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📜</span>
+              <span>评审档案</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="report.html"><span class="icon">▤</span>智能报告</a>
+              <a class="sidebar-item sidebar-l3" href="history.html"><span class="icon">⏱</span>历史评审记录</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 平台级模块：迎检模块之后 -->
+      <a class="sidebar-item" href="rule-library.html"><span class="icon">📘</span>规则库</a>
+      <a class="sidebar-item" href="event-control.html"><span class="icon">🧭</span>事件管控中心</a>
+      <a class="sidebar-item" href="data-quality.html"><span class="icon">📊</span>样本数据质控</a>
+      <!-- 任务管理：按需求隐藏（2026-09-22）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
+      <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">▦</span>任务管理</a> -->
+
+      <!-- ========== 系统管理 · 二级菜单（2026-09-24 新增） ==========
+           一级「系统管理」可折叠；二级＝用户管理 / 角色管理 / 操作日志。
+           RBAC 模型里对应第 9 个功能模块（权限粒度到功能模块）。 -->
+      <div class="sidebar-module">
+        <div class="sidebar-level1">
+          <span class="icon">⚙</span>
+          <span>系统管理</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sidebar-module-body">
+          <a class="sidebar-item sidebar-l2 root-item" href="system-users.html"><span class="icon">◎</span>用户管理</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="system-roles.html"><span class="icon">🛡</span>角色管理</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="system-audit.html"><span class="icon">🔍</span>操作日志</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">
+        <span>平台级模块</span><span class="sep">/</span>
+        <span class="current">知识库</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-icon-btn">🔍</div><div class="topbar-icon-btn">🔔</div>
+        <div class="user-chip"><div class="user-avatar">质</div><span>质量管理员</span></div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">知识库</div>
+          <div class="page-desc">分类管理 · 文档与检索 · 可视化分析 · 知识全生命周期治理</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn" data-kb-toast="知识库数据已刷新">↻ 刷新</button>
+          <button class="btn btn-primary" data-kb-toast="新建知识库：请填写名称、分类与来源">＋ 新建知识库</button>
+        </div>
+      </div>
+
+      <div class="tabs kb-main-tabs" id="kb-main-tabs">
+        <div class="tab active" data-kb-view="manage">知识库管理</div>
+        <div class="tab" data-kb-view="docs">文档目录</div>
+        <div class="tab" data-kb-view="viz">可视化展示</div>
+        <div class="tab" data-kb-view="lifecycle">全生命周期治理</div>
+      </div>
+
+      <!-- ====================== 知识库管理 ====================== -->
+      <section class="kb-panel active" data-kb-panel="manage">
+        <div class="kb-layout">
+          <div class="card kb-side">
+            <div class="card-header">
+              <div class="card-title">分类</div>
+              <span class="card-extra" data-kb-toast="新建知识库分类">＋ 新建</span>
+            </div>
+            <div class="kb-side-list">
+              <div class="kb-side-item active" data-kb-cat="all"><span>📚</span>全部知识库<b>5</b></div>
+              <div class="kb-side-item" data-kb-cat="qms"><span>🏛</span>质量体系管理知识库<b>2</b></div>
+              <div class="kb-side-item" data-kb-cat="sample"><span>🧬</span>样本库知识库<b>2</b></div>
+              <div class="kb-side-item" data-kb-cat="special"><span>🔐</span>专有知识库<b>1</b></div>
+              <div class="kb-side-item" data-kb-cat="custom"><span>✎</span>自定义知识库<b>0</b></div>
+              <div class="kb-side-divider"></div>
+              <div class="kb-side-item kb-side-sub" data-kb-cat="recent"><span>⏱</span>最近更新<b>4</b></div>
+              <div class="kb-side-item kb-side-sub" data-kb-cat="shared"><span>🤝</span>共享给我的<b>3</b></div>
+            </div>
+          </div>
+
+          <div class="card kb-manage-card">
+            <div class="kb-toolbar">
+              <div class="card-title">全部知识库 <span class="tag tag-default" id="kb-result-count">5</span></div>
+              <div class="kb-toolbar-right">
+                <select class="select" id="kb-source">
+                  <option value="">来源</option>
+                  <option value="内置">内置</option>
+                  <option value="自建">自建</option>
+                </select>
+                <div class="search-box">
+                  <input class="input" id="kb-search" placeholder="搜索知识库名称" />
+                </div>
+                <button class="btn" id="kb-query">查询</button>
+              </div>
+            </div>
+            <div class="table-wrap" style="border:none; border-radius:0;">
+              <table class="table kb-table">
+                <thead>
+                  <tr>
+                    <th><span class="checkbox" id="kb-check-all"></span></th>
+                    <th>名称</th>
+                    <th>来源</th>
+                    <th>文档数</th>
+                    <th>描述</th>
+                    <th>更新时间</th>
+                    <th class="col-actions">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="kb-tbody">
+                  <tr data-name="默认知识库" data-source="内置" data-cat="qms">
+                    <td><span class="checkbox"></span></td>
+                    <td><div class="kb-name"><span class="ico">📁</span>默认知识库 <span class="tag tag-primary">默认</span></div></td>
+                    <td><span class="tag tag-default">内置</span></td>
+                    <td>7</td>
+                    <td><span class="kb-desc">系统默认知识库（预留）</span></td>
+                    <td><span class="kb-time">2026-10-17 20:50</span></td>
+                    <td class="col-actions"><button class="btn-text" data-kb-open="默认知识库">打开</button><button class="btn-text" data-kb-toast="编辑默认知识库">编辑</button><button class="btn-text" data-kb-toast="删除默认知识库">删除</button></td>
+                  </tr>
+                  <tr data-name="质量手册" data-source="自建" data-cat="qms">
+                    <td><span class="checkbox"></span></td>
+                    <td><div class="kb-name"><span class="ico">📘</span>质量手册</div></td>
+                    <td><span class="tag tag-default">自建</span></td>
+                    <td>0</td>
+                    <td><span class="kb-desc">—</span></td>
+                    <td><span class="kb-time">2026-10-19 14:53</span></td>
+                    <td class="col-actions"><button class="btn-text" data-kb-open="质量手册">打开</button><button class="btn-text" data-kb-toast="编辑质量手册">编辑</button><button class="btn-text" data-kb-toast="删除质量手册">删除</button></td>
+                  </tr>
+                  <tr data-name="知识库1" data-source="自建" data-cat="sample">
+                    <td><span class="checkbox"></span></td>
+                    <td><div class="kb-name"><span class="ico">📙</span>知识库1</div></td>
+                    <td><span class="tag tag-default">自建</span></td>
+                    <td>1</td>
+                    <td><span class="kb-desc">—</span></td>
+                    <td><span class="kb-time">2026-10-17 22:24</span></td>
+                    <td class="col-actions"><button class="btn-text" data-kb-open="知识库1">打开</button><button class="btn-text" data-kb-toast="编辑知识库1">编辑</button><button class="btn-text" data-kb-toast="删除知识库1">删除</button></td>
+                  </tr>
+                  <tr data-name="文献库" data-source="内置" data-cat="special">
+                    <td><span class="checkbox"></span></td>
+                    <td><div class="kb-name"><span class="ico">📄</span>文献库</div></td>
+                    <td><span class="tag tag-default">内置</span></td>
+                    <td>4</td>
+                    <td><span class="kb-desc">文献库（预留，内容后续导入）</span></td>
+                    <td><span class="kb-time">2026-10-17 14:42</span></td>
+                    <td class="col-actions"><button class="btn-text" data-kb-open="文献库">打开</button><button class="btn-text" data-kb-toast="编辑文献库">编辑</button><button class="btn-text" data-kb-toast="删除文献库">删除</button></td>
+                  </tr>
+                  <tr data-name="生物样本库知识库" data-source="内置" data-cat="sample">
+                    <td><span class="checkbox"></span></td>
+                    <td><div class="kb-name"><span class="ico">🧬</span>生物样本库知识库</div></td>
+                    <td><span class="tag tag-default">内置</span></td>
+                    <td>89</td>
+                    <td><span class="kb-desc">生物样本库相关法规政策 / 标准 / 指南 / 专著（预置内容）</span></td>
+                    <td><span class="kb-time">2026-10-21 16:30</span></td>
+                    <td class="col-actions"><button class="btn-text" data-kb-open="生物样本库知识库">打开</button><button class="btn-text" data-kb-toast="编辑生物样本库知识库">编辑</button><button class="btn-text" data-kb-toast="删除生物样本库知识库">删除</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== 文档目录 ====================== -->
+      <section class="kb-panel" data-kb-panel="docs">
+        <div class="card kb-doc-card">
+          <div class="kb-doc-head">
+            <button class="kb-back" data-kb-view="manage">‹ 返回</button>
+            <div>
+              <div class="kb-doc-title" id="kb-doc-title">生物样本库知识库</div>
+              <div class="kb-doc-sub">知识库 / 全部文件 · 支持目录、文档、命中测试与批量操作</div>
+            </div>
+            <div class="kb-doc-actions">
+              <button class="btn btn-primary" data-kb-toast="命中测试：输入检索片段后返回命中文档、条款与相似度">◎ 命中测试</button>
+              <button class="btn" data-kb-toast="添加文档：支持 PDF / Word / Excel / 图片批量上传">＋ 添加文档</button>
+              <button class="btn" data-kb-toast="添加子目录：请输入目录名称与分类">＋ 添加子目录</button>
+              <button class="btn btn-danger" data-kb-toast="请先勾选需要删除的文件或目录">🗑 删除</button>
+            </div>
+          </div>
+          <div class="tabs kb-folder-tabs" id="kb-folder-tabs">
+            <div class="tab active" data-kb-doc="all">全部文件<span class="kb-count">89</span></div>
+            <div class="tab" data-kb-doc="industry">行业/地方标准<span class="kb-count">12</span></div>
+            <div class="tab" data-kb-doc="policy">法规政策<span class="kb-count">9</span></div>
+            <div class="tab" data-kb-doc="intl">国际标准<span class="kb-count">6</span></div>
+            <div class="tab" data-kb-doc="national">国家标准<span class="kb-count">14</span></div>
+            <div class="tab" data-kb-doc="group">团体标准<span class="kb-count">11</span></div>
+            <div class="tab" data-kb-doc="book">专著/教材<span class="kb-count">18</span></div>
+            <div class="tab" data-kb-doc="consensus">专家共识/指南<span class="kb-count">19</span></div>
+          </div>
+          <div class="table-wrap" style="border:none; border-radius:0;">
+            <table class="table kb-doc-table">
+              <thead>
+                <tr>
+                  <th><span class="checkbox" id="kb-doc-check-all"></span></th>
+                  <th>文件名</th>
+                  <th>创建时间</th>
+                </tr>
+              </thead>
+              <tbody id="kb-doc-body"></tbody>
+            </table>
+          </div>
+          <div class="kb-doc-foot">
+            <span id="kb-doc-summary">共 89 个文档 · 7 个目录</span>
+            <span>当前目录：<b id="kb-doc-current">全部文件</b></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== 可视化展示 ====================== -->
+      <section class="kb-panel" data-kb-panel="viz">
+        <div class="grid grid-3">
+          <div class="card kb-kpi">
+            <div class="kb-kpi-ico">📄</div>
+            <div class="stat-label">知识库文档总数</div>
+            <div class="stat-value">89<small>份</small></div>
+            <div class="stat-meta"><span class="pos">本月新增 12 份</span> · 覆盖 8 个分类</div>
+          </div>
+          <div class="card kb-kpi">
+            <div class="kb-kpi-ico">📁</div>
+            <div class="stat-label">文件夹数量</div>
+            <div class="stat-value">7<small>个</small></div>
+            <div class="stat-meta">标准 3 · 政策 1 · 指南 1 · 专著 1 · 其他 1</div>
+          </div>
+          <div class="card kb-kpi">
+            <div class="kb-kpi-ico">🗂️</div>
+            <div class="stat-label">知识库数量</div>
+            <div class="stat-value">5<small>个</small></div>
+            <div class="stat-meta">内置 3 · 自建 2 · 共享 3</div>
+          </div>
+          <div class="card kb-kpi">
+            <div class="kb-kpi-ico">🕸️</div>
+            <div class="stat-label">知识图谱实体</div>
+            <div class="stat-value">1,284<small>个</small></div>
+            <div class="stat-meta">覆盖 6 类实体 · 3,976 条关系</div>
+          </div>
+          <div class="card kb-kpi">
+            <div class="kb-kpi-ico">🔗</div>
+            <div class="stat-label">图谱关系数量</div>
+            <div class="stat-value">3,976<small>条</small></div>
+            <div class="stat-meta">文档关联 1,860 · 条款关联 1,204 · 责任人 912</div>
+          </div>
+          <div class="card kb-kpi">
+            <div class="kb-kpi-ico">⚙️</div>
+            <div class="stat-label">治理任务</div>
+            <div class="stat-value">48<small>项</small></div>
+            <div class="stat-meta">进行中 12 · 待审核 6 · 已完成 30</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:16px;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📊 文档分类分布</div>
+              <span class="tag tag-primary">共 89 份</span>
+            </div>
+            <div class="kb-bars">
+              <div class="kb-bar-row"><span>行业/地方标准</span><div class="kb-bar-track"><div class="kb-bar-fill" style="width:63%"></div></div><b>12</b></div>
+              <div class="kb-bar-row"><span>法规政策</span><div class="kb-bar-track"><div class="kb-bar-fill" style="width:47%"></div></div><b>9</b></div>
+              <div class="kb-bar-row"><span>国际标准</span><div class="kb-bar-track"><div class="kb-bar-fill" style="width:32%"></div></div><b>6</b></div>
+              <div class="kb-bar-row"><span>国家标准</span><div class="kb-bar-track"><div class="kb-bar-fill" style="width:74%"></div></div><b>14</b></div>
+              <div class="kb-bar-row"><span>团体标准</span><div class="kb-bar-track"><div class="kb-bar-fill" style="width:58%"></div></div><b>11</b></div>
+              <div class="kb-bar-row"><span>专著/教材</span><div class="kb-bar-track"><div class="kb-bar-fill" style="width:95%"></div></div><b>18</b></div>
+              <div class="kb-bar-row"><span>专家共识/指南</span><div class="kb-bar-track"><div class="kb-bar-fill" style="width:100%"></div></div><b>19</b></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🕸️ 知识图谱实体分布</div>
+              <span class="tag tag-primary">1,284 个实体</span>
+            </div>
+            <div class="kb-graph-flex">
+              <div class="kb-donut">
+                <div class="kb-donut-center"><b>1,284</b><span>实体总数</span></div>
+              </div>
+              <div class="kb-legend">
+                <div class="kb-legend-item"><i style="background:#2B7FFF"></i>文件<b>386</b></div>
+                <div class="kb-legend-item"><i style="background:#0FC6C2"></i>记录<b>312</b></div>
+                <div class="kb-legend-item"><i style="background:#722ED1"></i>条款<b>185</b></div>
+                <div class="kb-legend-item"><i style="background:#FF7D00"></i>责任人<b>146</b></div>
+                <div class="kb-legend-item"><i style="background:#00B42A"></i>制度<b>88</b></div>
+                <div class="kb-legend-item"><i style="background:#C9CDD4"></i>其他<b>167</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-3" style="margin-top:16px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">✅ 知识健康度</div><span class="tag tag-success">良好</span></div>
+            <div class="kb-health">
+              <div class="kb-health-row"><span>内容完整率</span><div class="progress"><div class="progress-bar success" style="width:96%"></div></div><b>96%</b></div>
+              <div class="kb-health-row"><span>实体标注率</span><div class="progress"><div class="progress-bar" style="width:88%"></div></div><b>88%</b></div>
+              <div class="kb-health-row"><span>审核通过率</span><div class="progress"><div class="progress-bar success" style="width:92%"></div></div><b>92%</b></div>
+              <div class="kb-health-row"><span>更新及时率</span><div class="progress"><div class="progress-bar warning" style="width:90%"></div></div><b>90%</b></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🕒 最近更新</div><span class="card-extra" data-kb-view="docs">查看目录 →</span></div>
+            <div class="kb-update-list">
+              <div class="kb-update-item"><span class="dot dot-primary"></span><div><b>GB/T 37864-2019 生物样本库质量和能力通用要求</b><span>国家标准 · 2026-10-21 16:30</span></div></div>
+              <div class="kb-update-item"><span class="dot dot-success"></span><div><b>生物样本库伦理审查指南</b><span>专家共识/指南 · 2026-10-20 11:18</span></div></div>
+              <div class="kb-update-item"><span class="dot dot-warning"></span><div><b>人类遗传资源管理条例</b><span>法规政策 · 2026-10-19 09:42</span></div></div>
+              <div class="kb-update-item"><span class="dot dot-default"></span><div><b>ISBER Best Practices (2018)</b><span>国际标准 · 2026-10-18 15:06</span></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🧭 知识覆盖范围</div><span class="tag tag-default">4 大领域</span></div>
+            <div class="kb-coverage">
+              <span class="filter-chip active">生物样本库</span>
+              <span class="filter-chip">质量管理体系</span>
+              <span class="filter-chip">CNAS / ISO</span>
+              <span class="filter-chip">伦理与法规</span>
+              <span class="filter-chip">实验室安全</span>
+              <span class="filter-chip">数据治理</span>
+              <span class="filter-chip">设备管理</span>
+              <span class="filter-chip">人员培训</span>
+            </div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--border); font-size:12.5px; color:var(--text-secondary); line-height:1.8;">
+              <div>已关联 CNAS 条款 <b>30</b> 条 · 规则 <b>26</b> 条</div>
+              <div>待补充知识缺口 <b style="color:var(--warning)">8</b> 项</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== 全生命周期治理 ====================== -->
+      <section class="kb-panel" data-kb-panel="lifecycle">
+        <div class="kb-life-summary">
+          <span class="kb-life-pill"><i style="background:#2B7FFF"></i>采集 <b>128</b></span>
+          <span class="kb-life-pill"><i style="background:#0FC6C2"></i>清洗 <b>96</b></span>
+          <span class="kb-life-pill"><i style="background:#722ED1"></i>标注 <b>88</b></span>
+          <span class="kb-life-pill"><i style="background:#FF7D00"></i>审核 <b>6</b></span>
+          <span class="kb-life-pill"><i style="background:#00B42A"></i>发布 <b>72</b></span>
+          <span class="kb-life-pill"><i style="background:#2B7FFF"></i>更新 <b>14</b></span>
+          <span class="kb-life-pill"><i style="background:#86909C"></i>归档 <b>32</b></span>
+          <span class="kb-life-pill"><i style="background:#F53F3F"></i>权限与审计 <b>128</b></span>
+        </div>
+
+        <div class="kb-flow">
+          <div class="kb-flow-card">
+            <div class="kb-flow-no">01</div>
+            <div class="kb-flow-ico">📥</div>
+            <div class="kb-flow-name">采集</div>
+            <div class="kb-flow-meta">多源接入 · 去重<br>128 份 · 今日 +6</div>
+            <span class="tag tag-success">正常</span>
+          </div>
+          <div class="kb-flow-card">
+            <div class="kb-flow-no">02</div>
+            <div class="kb-flow-ico">🧹</div>
+            <div class="kb-flow-name">清洗</div>
+            <div class="kb-flow-meta">格式归一 · OCR · 脱敏<br>96 份 · 待处理 4</div>
+            <span class="tag tag-warning">进行中</span>
+          </div>
+          <div class="kb-flow-card current">
+            <div class="kb-flow-no">03</div>
+            <div class="kb-flow-ico">🏷️</div>
+            <div class="kb-flow-name">标注</div>
+            <div class="kb-flow-meta">主题 · 实体 · 条款标注<br>88 份 · 标注率 88%</div>
+            <span class="tag tag-warning">进行中</span>
+          </div>
+          <div class="kb-flow-card">
+            <div class="kb-flow-no">04</div>
+            <div class="kb-flow-ico">🔍</div>
+            <div class="kb-flow-name">审核</div>
+            <div class="kb-flow-meta">双人复核 · 合规校验<br>6 份 · 平均 1.2 天</div>
+            <span class="tag tag-warning">待审核</span>
+          </div>
+          <div class="kb-flow-card">
+            <div class="kb-flow-no">05</div>
+            <div class="kb-flow-ico">🚀</div>
+            <div class="kb-flow-name">发布</div>
+            <div class="kb-flow-meta">版本发布 · 目录同步<br>72 份 · 本周 +8</div>
+            <span class="tag tag-success">正常</span>
+          </div>
+          <div class="kb-flow-card">
+            <div class="kb-flow-no">06</div>
+            <div class="kb-flow-ico">🔄</div>
+            <div class="kb-flow-name">更新</div>
+            <div class="kb-flow-meta">变更监测 · 失效提醒<br>14 项 · 待确认 3</div>
+            <span class="tag tag-warning">进行中</span>
+          </div>
+          <div class="kb-flow-card">
+            <div class="kb-flow-no">07</div>
+            <div class="kb-flow-ico">🗄️</div>
+            <div class="kb-flow-name">归档</div>
+            <div class="kb-flow-meta">历史版本 · 冷备<br>32 批 · 保留 10 年</div>
+            <span class="tag tag-success">正常</span>
+          </div>
+          <div class="kb-flow-card">
+            <div class="kb-flow-no">08</div>
+            <div class="kb-flow-ico">🔐</div>
+            <div class="kb-flow-name">权限与审计</div>
+            <div class="kb-flow-meta">角色授权 · 访问审计 · 水印<br>128 次操作 · 风险 0</div>
+            <span class="tag tag-success">正常</span>
+          </div>
+        </div>
+
+        <div class="card kb-life-card">
+          <div class="card-header">
+            <div class="card-title">🧭 治理任务与审计</div>
+            <span class="tag tag-primary">本月完成度 86%</span>
+          </div>
+          <div class="table-wrap" style="border:none; border-radius:0;">
+            <table class="table kb-life-table">
+              <thead>
+                <tr>
+                  <th>环节</th>
+                  <th>治理动作 / 规则</th>
+                  <th>责任人</th>
+                  <th>时限</th>
+                  <th>状态</th>
+                  <th>最近操作</th>
+                  <th class="col-actions">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="tag tag-primary">采集</span></td><td>多源接入、去重、元数据抽取</td><td>王静</td><td>T+1</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 16:30</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看采集任务详情">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">清洗</span></td><td>格式归一、OCR 识别、敏感信息脱敏</td><td>李强</td><td>T+1</td><td><span class="tag tag-warning">进行中</span></td><td>2026-10-21 15:12</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看清洗任务详情">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">标注</span></td><td>主题、实体、条款、责任人标注</td><td>赵敏</td><td>T+2</td><td><span class="tag tag-warning">进行中</span></td><td>2026-10-21 14:08</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看标注任务详情">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">审核</span></td><td>双人复核、合规校验、版本比对</td><td>陈洁</td><td>T+3</td><td><span class="tag tag-warning">待审核</span></td><td>2026-10-21 11:36</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看审核任务详情">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">发布</span></td><td>版本发布、目录同步、检索索引重建</td><td>周涛</td><td>T+1</td><td><span class="tag tag-success">已完成</span></td><td>2026-10-20 17:20</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看发布记录">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">更新</span></td><td>标准变更监测、失效提醒、增量同步</td><td>系统</td><td>实时</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 09:00</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看更新记录">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">归档</span></td><td>历史版本归档、冷备、保留策略</td><td>系统</td><td>每月</td><td><span class="tag tag-success">正常</span></td><td>2026-10-01 02:00</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看归档批次">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">权限与审计</span></td><td>角色授权、访问审计、水印追踪</td><td>管理员</td><td>实时</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 16:42</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看审计日志">详情</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="kb-life-foot">
+            <span>今日操作 128 次 · 待审核 6 项 · 权限变更 3 次 · 归档 12 批</span>
+            <span>审计留痕完整率 <b style="color:var(--success)">100%</b></span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script src="../assets/roles.js"></script>
+<script src="../assets/task-store.js"></script>
+<script src="../assets/review-store.js"></script>
+<script src="../assets/reminder-store.js"></script>
+<script src="../assets/app.js"></script>
+<script src="../assets/role-guard.js"></script>
+<script src="../assets/agent-widget.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function toast(msg) { if (window.showToast) window.showToast(msg, 'success'); }
+
+  var currentView = 'manage';
+  function setView(name) {
+    currentView = name;
+    $all('.kb-panel').forEach(function (p) {
+      p.classList.toggle('active', p.getAttribute('data-kb-panel') === name);
+    });
+    $all('#kb-main-tabs .tab').forEach(function (t) {
+      t.classList.toggle('active', t.getAttribute('data-kb-view') === name);
+    });
+    if (name === 'viz' && window.lucide) window.lucide.createIcons();
+  }
+
+  var DOC_DATA = {
+    all: [
+      { type: 'folder', name: '行业/地方标准', count: 12, time: '2026-10-15 16:23:51' },
+      { type: 'folder', name: '法规政策', count: 9, time: '2026-10-15 16:23:34' },
+      { type: 'folder', name: '国际标准', count: 6, time: '2026-10-15 16:23:30' },
+      { type: 'folder', name: '国家标准', count: 14, time: '2026-10-15 16:23:06' },
+      { type: 'folder', name: '团体标准', count: 11, time: '2026-10-15 16:22:10' },
+      { type: 'folder', name: '专著/教材', count: 18, time: '2026-10-15 16:21:53' },
+      { type: 'folder', name: '专家共识/指南', count: 19, time: '2026-10-15 16:21:26' }
+    ],
+    industry: [
+      { type: 'file', name: '上海市生物样本库建设与管理规范（试行）.pdf', time: '2026-10-15 16:24:02' },
+      { type: 'file', name: '浙江省生物样本库建设指南.pdf', time: '2026-10-15 16:24:01' },
+      { type: 'file', name: '广东省临床生物样本库管理规范.pdf', time: '2026-10-15 16:24:00' },
+      { type: 'file', name: '北京市生物样本库质量评估细则.docx', time: '2026-10-15 16:23:58' }
+    ],
+    policy: [
+      { type: 'file', name: '中华人民共和国人类遗传资源管理条例.pdf', time: '2026-10-15 16:23:42' },
+      { type: 'file', name: '中华人民共和国生物安全法.pdf', time: '2026-10-15 16:23:40' },
+      { type: 'file', name: '医疗卫生机构科研诚信管理办法.pdf', time: '2026-10-15 16:23:38' },
+      { type: 'file', name: '涉及人的生命科学和医学研究伦理审查办法.pdf', time: '2026-10-15 16:23:36' }
+    ],
+    intl: [
+      { type: 'file', name: 'ISO 20387:2018 Biotechnology — Biobanking.pdf', time: '2026-10-15 16:23:32' },
+      { type: 'file', name: 'ISO 15189:2022 Medical laboratories.pdf', time: '2026-10-15 16:23:31' },
+      { type: 'file', name: 'ISBER Best Practices (2018).pdf', time: '2026-10-15 16:23:29' },
+      { type: 'file', name: 'OECD Best Practice Guidelines for Biological Resource Centres.pdf', time: '2026-10-15 16:23:27' }
+    ],
+    national: [
+      { type: 'file', name: 'GB/T 37864-2019 生物样本库质量和能力通用要求.pdf', time: '2026-10-15 16:23:10' },
+      { type: 'file', name: 'GB 19489-2008 实验室生物安全通用要求.pdf', time: '2026-10-15 16:23:08' },
+      { type: 'file', name: 'GB/T 27425-2020 科研实验室良好规范.pdf', time: '2026-10-15 16:23:07' },
+      { type: 'file', name: 'WS/T 823-2023 生物样本库管理规范.pdf', time: '2026-10-15 16:23:05' }
+    ],
+    group: [
+      { type: 'file', name: '中国医药生物技术协会生物样本库标准.pdf', time: '2026-10-15 16:22:12' },
+      { type: 'file', name: '中国生物样本库联盟团体标准.pdf', time: '2026-10-15 16:22:11' },
+      { type: 'file', name: '肿瘤生物样本库建设规范.pdf', time: '2026-10-15 16:22:09' }
+    ],
+    book: [
+      { type: 'file', name: '生物样本库建设与管理.pdf', time: '2026-10-15 16:21:55' },
+      { type: 'file', name: '临床生物样本库实践指南.pdf', time: '2026-10-15 16:21:54' },
+      { type: 'file', name: '生物样本库质量控制技术.pdf', time: '2026-10-15 16:21:52' }
+    ],
+    consensus: [
+      { type: 'file', name: '中国生物样本库专家共识.pdf', time: '2026-10-15 16:21:28' },
+      { type: 'file', name: '生物样本库伦理审查指南.pdf', time: '2026-10-15 16:21:27' },
+      { type: 'file', name: '生物样本库数据共享专家共识.pdf', time: '2026-10-15 16:21:25' }
+    ]
+  };
+
+  var DOC_LABEL = {
+    all: '全部文件', industry: '行业/地方标准', policy: '法规政策', intl: '国际标准',
+    national: '国家标准', group: '团体标准', book: '专著/教材', consensus: '专家共识/指南'
+  };
+
+  function renderDocs(key) {
+    var list = DOC_DATA[key] || DOC_DATA.all;
+    var body = $('#kb-doc-body');
+    body.innerHTML = list.map(function (d) {
+      var icon = d.type === 'folder' ? '📁' : '📄';
+      var name = d.type === 'folder'
+        ? '<span class="kb-folder-name">' + d.name + '</span> <span class="tag tag-default" style="margin-left:8px;">' + d.count + ' 份</span>'
+        : d.name;
+      return '<tr ' + (d.type === 'folder' ? 'data-kb-folder="' + d.name + '"' : '') + '>' +
+        '<td><span class="checkbox"></span></td>' +
+        '<td><div class="kb-file"><span class="ico ' + (d.type === 'folder' ? 'folder' : '') + '">' + icon + '</span>' + name + '</div></td>' +
+        '<td><span class="kb-time">' + d.time + '</span></td></tr>';
+    }).join('');
+    $('#kb-doc-current').textContent = DOC_LABEL[key] || '全部文件';
+    $('#kb-doc-summary').textContent = key === 'all'
+      ? '共 89 个文档 · 7 个目录'
+      : '共 ' + ({ industry: 12, policy: 9, intl: 6, national: 14, group: 11, book: 18, consensus: 19 }[key] || list.length) + ' 个文档';
+  }
+
+  $all('#kb-main-tabs .tab').forEach(function (t) {
+    t.addEventListener('click', function () { setView(t.getAttribute('data-kb-view')); });
+  });
+  $all('[data-kb-view]').forEach(function (el) {
+    if (el.classList.contains('tab')) return;
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      setView(el.getAttribute('data-kb-view'));
+      if (el.getAttribute('data-kb-view') === 'docs') {
+        $('#kb-doc-title').textContent = '生物样本库知识库';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  });
+
+  $all('[data-kb-toast]').forEach(function (el) {
+    el.addEventListener('click', function () { toast(el.getAttribute('data-kb-toast')); });
+  });
+
+  $all('.kb-side-item').forEach(function (item) {
+    item.addEventListener('click', function () {
+      $all('.kb-side-item').forEach(function (x) { x.classList.remove('active'); });
+      item.classList.add('active');
+      var cat = item.getAttribute('data-kb-cat');
+      var rows = $all('#kb-tbody tr');
+      var count = 0;
+      rows.forEach(function (tr) {
+        var show = cat === 'all' || cat === 'recent' || cat === 'shared' || tr.getAttribute('data-cat') === cat;
+        tr.style.display = show ? '' : 'none';
+        if (show) count++;
+      });
+      $('#kb-result-count').textContent = count;
+      toast('已筛选：' + item.textContent.replace(/\d+$/, '').trim());
+    });
+  });
+
+  function filterBases() {
+    var kw = ($('#kb-search').value || '').trim();
+    var source = $('#kb-source').value;
+    var rows = $all('#kb-tbody tr');
+    var count = 0;
+    rows.forEach(function (tr) {
+      var name = tr.getAttribute('data-name');
+      var src = tr.getAttribute('data-source');
+      var show = (!kw || name.indexOf(kw) > -1) && (!source || src === source);
+      tr.style.display = show ? '' : 'none';
+      if (show) count++;
+    });
+    $('#kb-result-count').textContent = count;
+    if (!count) toast('没有符合条件的数据，请调整检索条件');
+  }
+
+  $('#kb-query').addEventListener('click', filterBases);
+  $('#kb-search').addEventListener('keydown', function (e) { if (e.key === 'Enter') filterBases(); });
+  $('#kb-source').addEventListener('change', filterBases);
+
+  $all('[data-kb-open]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var name = btn.getAttribute('data-kb-open');
+      $('#kb-doc-title').textContent = name;
+      if (name !== '生物样本库知识库') {
+        toast('当前演示数据为「生物样本库知识库」，已进入目录框架');
+      }
+      setView('docs');
+      $('#kb-folder-tabs .tab').forEach(function (t) { t.classList.remove('active'); });
+      $('#kb-folder-tabs .tab[data-kb-doc="all"]').classList.add('active');
+      renderDocs('all');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  $all('#kb-folder-tabs .tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      $all('#kb-folder-tabs .tab').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      renderDocs(t.getAttribute('data-kb-doc'));
+    });
+  });
+
+  function bindCheckAll(allSel, rowSel) {
+    var all = $(allSel);
+    if (!all) return;
+    all.addEventListener('click', function () {
+      var on = !all.classList.contains('checked');
+      all.classList.toggle('checked', on);
+      $all(rowSel).forEach(function (box) { box.classList.toggle('checked', on); });
+    });
+  }
+  bindCheckAll('#kb-check-all', '#kb-tbody .checkbox');
+  bindCheckAll('#kb-doc-check-all', '#kb-doc-body .checkbox');
+
+  $('#kb-doc-body').addEventListener('click', function (e) {
+    var row = e.target.closest('[data-kb-folder]');
+    if (row) toast('打开目录：' + row.getAttribute('data-kb-folder'));
+  });
+
+  function applyHash() {
+    var h = (location.hash || '').replace('#', '');
+    if (['manage', 'docs', 'viz', 'lifecycle'].indexOf(h) > -1) setView(h);
+  }
+  window.addEventListener('hashchange', applyHash);
+  applyHash();
+
+  renderDocs('all');
+})();
+</script>
+</body>
+</html>
