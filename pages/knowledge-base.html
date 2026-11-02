@@ -104,13 +104,16 @@
   .kb-coverage .filter-chip:hover { color: var(--text-secondary); border-color: var(--border); }
 
   .kb-life-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .kb-life-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--border-light); font-size: 12.5px; color: var(--text-secondary); }
+  .kb-life-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--border-light); font-size: 12.5px; color: var(--text-secondary); cursor: pointer; transition: border-color .15s, color .15s, box-shadow .15s; }
+  .kb-life-pill:hover { border-color: var(--primary); color: var(--primary); box-shadow: var(--shadow-sm); }
   .kb-life-pill b { color: var(--text-primary); }
   .kb-life-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
 
   .kb-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .kb-flow-card { position: relative; background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px 16px 12px; min-height: 132px; }
-  .kb-flow-card:hover { border-color: var(--primary-200); box-shadow: var(--shadow-sm); }
+  .kb-flow-card { position: relative; background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px 16px 12px; min-height: 132px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .kb-flow-card:hover { border-color: var(--primary-200); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .kb-flow-card:hover .kb-flow-name { color: var(--primary); }
+  .kb-flow-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .kb-flow-card.current { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(43,127,255,.1); }
   .kb-flow-no { position: absolute; top: 12px; right: 14px; font-size: 11px; font-weight: 700; color: var(--text-placeholder); letter-spacing: .5px; }
   .kb-flow-ico { width: 30px; height: 30px; border-radius: 8px; background: var(--primary-lighter); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 8px; }
@@ -123,6 +126,24 @@
   .kb-life-card .card-header { padding: 16px 20px 0; margin-bottom: 12px; }
   .kb-life-table .col-actions { width: 140px; }
   .kb-life-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
+
+  .kb-modal-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .kb-modal-stat { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 11px 12px; background: var(--bg-page); }
+  .kb-modal-stat span { display: block; font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .kb-modal-stat b { font-size: 19px; line-height: 1.2; color: var(--text-primary); }
+  .kb-modal-stat b small { font-size: 11px; font-weight: 500; color: var(--text-tertiary); margin-left: 3px; }
+  .kb-modal-section { margin-bottom: 18px; }
+  .kb-modal-section:last-child { margin-bottom: 0; }
+  .kb-modal-section h4 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 9px; display: flex; align-items: center; gap: 7px; }
+  .kb-modal-section h4::before { content: ""; width: 3px; height: 13px; border-radius: 2px; background: var(--primary); }
+  .kb-modal .table-wrap { border-radius: var(--radius-md); }
+  .kb-modal .table th, .kb-modal .table td { padding: 8px 10px; font-size: 12px; }
+  .kb-modal .table th { font-size: 11.5px; }
+  .kb-modal-note { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--primary-lighter); color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+  .kb-modal-note b { color: var(--primary); }
+  .kb-modal-footer-note { margin-right: auto; font-size: 12px; color: var(--text-tertiary); }
+
+  @media (max-width: 900px) { .kb-modal-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
   @media (max-width: 1280px) {
     .kb-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -541,67 +562,67 @@
       <!-- ====================== 全生命周期治理 ====================== -->
       <section class="kb-panel" data-kb-panel="lifecycle">
         <div class="kb-life-summary">
-          <span class="kb-life-pill"><i style="background:#2B7FFF"></i>采集 <b>128</b></span>
-          <span class="kb-life-pill"><i style="background:#0FC6C2"></i>清洗 <b>96</b></span>
-          <span class="kb-life-pill"><i style="background:#722ED1"></i>标注 <b>88</b></span>
-          <span class="kb-life-pill"><i style="background:#FF7D00"></i>审核 <b>6</b></span>
-          <span class="kb-life-pill"><i style="background:#00B42A"></i>发布 <b>72</b></span>
-          <span class="kb-life-pill"><i style="background:#2B7FFF"></i>更新 <b>14</b></span>
-          <span class="kb-life-pill"><i style="background:#86909C"></i>归档 <b>32</b></span>
-          <span class="kb-life-pill"><i style="background:#F53F3F"></i>权限与审计 <b>128</b></span>
+          <span class="kb-life-pill" data-kb-life="collect"><i style="background:#2B7FFF"></i>采集 <b>128</b></span>
+          <span class="kb-life-pill" data-kb-life="clean"><i style="background:#0FC6C2"></i>清洗 <b>96</b></span>
+          <span class="kb-life-pill" data-kb-life="annotate"><i style="background:#722ED1"></i>标注 <b>88</b></span>
+          <span class="kb-life-pill" data-kb-life="review"><i style="background:#FF7D00"></i>审核 <b>6</b></span>
+          <span class="kb-life-pill" data-kb-life="publish"><i style="background:#00B42A"></i>发布 <b>72</b></span>
+          <span class="kb-life-pill" data-kb-life="update"><i style="background:#2B7FFF"></i>更新 <b>14</b></span>
+          <span class="kb-life-pill" data-kb-life="archive"><i style="background:#86909C"></i>归档 <b>32</b></span>
+          <span class="kb-life-pill" data-kb-life="audit"><i style="background:#F53F3F"></i>权限与审计 <b>128</b></span>
         </div>
 
         <div class="kb-flow">
-          <div class="kb-flow-card">
+          <div class="kb-flow-card" data-kb-life="collect" role="button" tabindex="0" title="查看采集详情">
             <div class="kb-flow-no">01</div>
             <div class="kb-flow-ico">📥</div>
             <div class="kb-flow-name">采集</div>
             <div class="kb-flow-meta">多源接入 · 去重<br>128 份 · 今日 +6</div>
             <span class="tag tag-success">正常</span>
           </div>
-          <div class="kb-flow-card">
+          <div class="kb-flow-card" data-kb-life="clean" role="button" tabindex="0" title="查看清洗详情">
             <div class="kb-flow-no">02</div>
             <div class="kb-flow-ico">🧹</div>
             <div class="kb-flow-name">清洗</div>
             <div class="kb-flow-meta">格式归一 · OCR · 脱敏<br>96 份 · 待处理 4</div>
             <span class="tag tag-warning">进行中</span>
           </div>
-          <div class="kb-flow-card current">
+          <div class="kb-flow-card current" data-kb-life="annotate" role="button" tabindex="0" title="查看标注详情">
             <div class="kb-flow-no">03</div>
             <div class="kb-flow-ico">🏷️</div>
             <div class="kb-flow-name">标注</div>
             <div class="kb-flow-meta">主题 · 实体 · 条款标注<br>88 份 · 标注率 88%</div>
             <span class="tag tag-warning">进行中</span>
           </div>
-          <div class="kb-flow-card">
+          <div class="kb-flow-card" data-kb-life="review" role="button" tabindex="0" title="查看审核详情">
             <div class="kb-flow-no">04</div>
             <div class="kb-flow-ico">🔍</div>
             <div class="kb-flow-name">审核</div>
             <div class="kb-flow-meta">双人复核 · 合规校验<br>6 份 · 平均 1.2 天</div>
             <span class="tag tag-warning">待审核</span>
           </div>
-          <div class="kb-flow-card">
+          <div class="kb-flow-card" data-kb-life="publish" role="button" tabindex="0" title="查看发布详情">
             <div class="kb-flow-no">05</div>
             <div class="kb-flow-ico">🚀</div>
             <div class="kb-flow-name">发布</div>
             <div class="kb-flow-meta">版本发布 · 目录同步<br>72 份 · 本周 +8</div>
             <span class="tag tag-success">正常</span>
           </div>
-          <div class="kb-flow-card">
+          <div class="kb-flow-card" data-kb-life="update" role="button" tabindex="0" title="查看更新详情">
             <div class="kb-flow-no">06</div>
             <div class="kb-flow-ico">🔄</div>
             <div class="kb-flow-name">更新</div>
             <div class="kb-flow-meta">变更监测 · 失效提醒<br>14 项 · 待确认 3</div>
             <span class="tag tag-warning">进行中</span>
           </div>
-          <div class="kb-flow-card">
+          <div class="kb-flow-card" data-kb-life="archive" role="button" tabindex="0" title="查看归档详情">
             <div class="kb-flow-no">07</div>
             <div class="kb-flow-ico">🗄️</div>
             <div class="kb-flow-name">归档</div>
             <div class="kb-flow-meta">历史版本 · 冷备<br>32 批 · 保留 10 年</div>
             <span class="tag tag-success">正常</span>
           </div>
-          <div class="kb-flow-card">
+          <div class="kb-flow-card" data-kb-life="audit" role="button" tabindex="0" title="查看权限与审计详情">
             <div class="kb-flow-no">08</div>
             <div class="kb-flow-ico">🔐</div>
             <div class="kb-flow-name">权限与审计</div>
@@ -629,14 +650,14 @@
                 </tr>
               </thead>
               <tbody>
-                <tr><td><span class="tag tag-primary">采集</span></td><td>多源接入、去重、元数据抽取</td><td>王静</td><td>T+1</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 16:30</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看采集任务详情">详情</button></td></tr>
-                <tr><td><span class="tag tag-primary">清洗</span></td><td>格式归一、OCR 识别、敏感信息脱敏</td><td>李强</td><td>T+1</td><td><span class="tag tag-warning">进行中</span></td><td>2026-10-21 15:12</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看清洗任务详情">详情</button></td></tr>
-                <tr><td><span class="tag tag-primary">标注</span></td><td>主题、实体、条款、责任人标注</td><td>赵敏</td><td>T+2</td><td><span class="tag tag-warning">进行中</span></td><td>2026-10-21 14:08</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看标注任务详情">详情</button></td></tr>
-                <tr><td><span class="tag tag-primary">审核</span></td><td>双人复核、合规校验、版本比对</td><td>陈洁</td><td>T+3</td><td><span class="tag tag-warning">待审核</span></td><td>2026-10-21 11:36</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看审核任务详情">详情</button></td></tr>
-                <tr><td><span class="tag tag-primary">发布</span></td><td>版本发布、目录同步、检索索引重建</td><td>周涛</td><td>T+1</td><td><span class="tag tag-success">已完成</span></td><td>2026-10-20 17:20</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看发布记录">详情</button></td></tr>
-                <tr><td><span class="tag tag-primary">更新</span></td><td>标准变更监测、失效提醒、增量同步</td><td>系统</td><td>实时</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 09:00</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看更新记录">详情</button></td></tr>
-                <tr><td><span class="tag tag-primary">归档</span></td><td>历史版本归档、冷备、保留策略</td><td>系统</td><td>每月</td><td><span class="tag tag-success">正常</span></td><td>2026-10-01 02:00</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看归档批次">详情</button></td></tr>
-                <tr><td><span class="tag tag-primary">权限与审计</span></td><td>角色授权、访问审计、水印追踪</td><td>管理员</td><td>实时</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 16:42</td><td class="col-actions"><button class="btn-text" data-kb-toast="查看审计日志">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">采集</span></td><td>多源接入、去重、元数据抽取</td><td>王静</td><td>T+1</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 16:30</td><td class="col-actions"><button class="btn-text" data-kb-life="collect">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">清洗</span></td><td>格式归一、OCR 识别、敏感信息脱敏</td><td>李强</td><td>T+1</td><td><span class="tag tag-warning">进行中</span></td><td>2026-10-21 15:12</td><td class="col-actions"><button class="btn-text" data-kb-life="clean">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">标注</span></td><td>主题、实体、条款、责任人标注</td><td>赵敏</td><td>T+2</td><td><span class="tag tag-warning">进行中</span></td><td>2026-10-21 14:08</td><td class="col-actions"><button class="btn-text" data-kb-life="annotate">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">审核</span></td><td>双人复核、合规校验、版本比对</td><td>陈洁</td><td>T+3</td><td><span class="tag tag-warning">待审核</span></td><td>2026-10-21 11:36</td><td class="col-actions"><button class="btn-text" data-kb-life="review">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">发布</span></td><td>版本发布、目录同步、检索索引重建</td><td>周涛</td><td>T+1</td><td><span class="tag tag-success">已完成</span></td><td>2026-10-20 17:20</td><td class="col-actions"><button class="btn-text" data-kb-life="publish">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">更新</span></td><td>标准变更监测、失效提醒、增量同步</td><td>系统</td><td>实时</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 09:00</td><td class="col-actions"><button class="btn-text" data-kb-life="update">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">归档</span></td><td>历史版本归档、冷备、保留策略</td><td>系统</td><td>每月</td><td><span class="tag tag-success">正常</span></td><td>2026-10-01 02:00</td><td class="col-actions"><button class="btn-text" data-kb-life="archive">详情</button></td></tr>
+                <tr><td><span class="tag tag-primary">权限与审计</span></td><td>角色授权、访问审计、水印追踪</td><td>管理员</td><td>实时</td><td><span class="tag tag-success">正常</span></td><td>2026-10-21 16:42</td><td class="col-actions"><button class="btn-text" data-kb-life="audit">详情</button></td></tr>
               </tbody>
             </table>
           </div>
@@ -647,6 +668,24 @@
         </div>
       </section>
     </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="kb-life-modal">
+  <div class="modal modal-xl" role="dialog" aria-modal="true" aria-labelledby="kb-life-title">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="kb-life-title"></div>
+        <div class="modal-subtitle" id="kb-life-sub"></div>
+      </div>
+      <button class="modal-close" type="button" data-kb-close aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body" id="kb-life-body"></div>
+    <div class="modal-footer">
+      <span class="kb-modal-footer-note" id="kb-life-foot"></span>
+      <button class="btn" type="button" data-kb-close>关闭</button>
+      <button class="btn btn-primary" type="button" id="kb-life-action"></button>
+    </div>
   </div>
 </div>
 
@@ -848,8 +887,325 @@
     if (row) toast('打开目录：' + row.getAttribute('data-kb-folder'));
   });
 
+  var LIFE = {
+    collect: {
+      title: '采集',
+      sub: '多源接入 · 去重 · 元数据抽取 · 增量同步',
+      action: '新建采集任务',
+      foot: '采集队列 3 项 · 最近同步 2026-10-21 16:30',
+      stats: [['接入数据源', '6', '个'], ['今日新增', '6', '份'], ['待同步', '3', '项'], ['采集成功率', '99.2', '%']],
+      sections: [
+        {
+          title: '数据源接入',
+          headers: ['数据源', '类型', '文档数', '最近同步', '状态'],
+          rows: [
+            ['CNAS 标准库', '外部标准库', '42', '2026-10-21 16:30', '<span class="tag tag-success">正常</span>'],
+            ['法规政策库', '外部法规库', '18', '2026-10-21 15:42', '<span class="tag tag-success">正常</span>'],
+            ['内部质量体系', '内部系统', '26', '2026-10-21 14:18', '<span class="tag tag-success">正常</span>'],
+            ['文献数据库', '文献接口', '12', '2026-10-20 22:10', '<span class="tag tag-warning">待同步</span>'],
+            ['专家共识库', '外部知识库', '19', '2026-10-20 18:06', '<span class="tag tag-success">正常</span>'],
+            ['手工上传', '本地上传', '11', '2026-10-19 17:30', '<span class="tag tag-default">已暂停</span>']
+          ]
+        },
+        {
+          title: '最近采集任务',
+          headers: ['任务', '来源', '文档数', '开始时间', '状态'],
+          rows: [
+            ['COL-20261021-006', '法规政策库', '3', '2026-10-21 16:28', '<span class="tag tag-success">已完成</span>'],
+            ['COL-20261021-005', 'CNAS 标准库', '2', '2026-10-21 14:12', '<span class="tag tag-success">已完成</span>'],
+            ['COL-20261021-004', '文献数据库', '1', '2026-10-21 09:36', '<span class="tag tag-warning">同步中</span>'],
+            ['COL-20261020-003', '专家共识库', '4', '2026-10-20 18:02', '<span class="tag tag-success">已完成</span>']
+          ]
+        }
+      ],
+      note: '<b>采集策略：</b>增量采集 + 文档指纹去重，重复文档自动跳过；失败任务自动重试 3 次并进入待办。'
+    },
+    clean: {
+      title: '清洗',
+      sub: '格式归一 · OCR 识别 · 去重 · 敏感信息脱敏',
+      action: '执行清洗',
+      foot: '待清洗 4 份 · 本月已完成 96 份',
+      stats: [['待清洗', '4', '份'], ['本月完成', '96', '份'], ['去重', '18', '份'], ['敏感信息脱敏', '32', '处']],
+      sections: [
+        {
+          title: '清洗规则',
+          headers: ['规则', '类型', '作用', '状态', '最近执行'],
+          rows: [
+            ['格式归一', '格式', 'PDF / Word 统一转为可检索文本', '<span class="tag tag-success">启用</span>', '2026-10-21 16:22'],
+            ['OCR 识别', '解析', '扫描件与图片型 PDF 文字识别', '<span class="tag tag-success">启用</span>', '2026-10-21 15:40'],
+            ['去重校验', '质量', '文档指纹比对，自动合并重复项', '<span class="tag tag-success">启用</span>', '2026-10-21 15:12'],
+            ['敏感信息脱敏', '合规', '身份证号、手机号、受试者信息脱敏', '<span class="tag tag-success">启用</span>', '2026-10-21 14:56']
+          ]
+        },
+        {
+          title: '待处理文档',
+          headers: ['文档', '问题', '建议动作', '状态'],
+          rows: [
+            ['GB/T 37864-2019 生物样本库质量和能力通用要求', '扫描件末页缺失', '重新上传或补录末页', '<span class="tag tag-warning">待处理</span>'],
+            ['人类遗传资源管理条例', '存在 2 处手机号', '确认脱敏后入库', '<span class="tag tag-warning">待确认</span>'],
+            ['ISBER Best Practices (2018)', '目录层级识别异常', '人工校正目录', '<span class="tag tag-warning">待处理</span>'],
+            ['生物样本库伦理审查指南', '重复文档', '合并至主版本', '<span class="tag tag-default">待合并</span>']
+          ]
+        }
+      ],
+      note: '<b>清洗结果：</b>通过后自动进入标注队列；异常文档保留原文件并记录审计，不进入检索索引。'
+    },
+    annotate: {
+      title: '标注',
+      sub: '主题标注 · 实体识别 · 条款关联 · 责任人标注',
+      action: '继续标注',
+      foot: '标注任务 10 项 · 实体标注率 88%',
+      stats: [['已标注', '78', '份'], ['待标注', '10', '份'], ['实体总数', '1,284', '个'], ['标注率', '88', '%']],
+      sections: [
+        {
+          title: '标注任务',
+          headers: ['文档', '标注类型', '实体数', '标注人', '状态'],
+          rows: [
+            ['GB/T 37864-2019 生物样本库质量和能力通用要求', '条款 / 实体', '128', '赵敏', '<span class="tag tag-success">已完成</span>'],
+            ['生物样本库伦理审查指南', '主题 / 实体', '46', '赵敏', '<span class="tag tag-warning">进行中</span>'],
+            ['人类遗传资源管理条例', '条款 / 责任人', '38', '王静', '<span class="tag tag-warning">进行中</span>'],
+            ['ISBER Best Practices (2018)', '实体 / 记录', '62', '李强', '<span class="tag tag-warning">待标注</span>']
+          ]
+        },
+        {
+          title: '标注类型分布',
+          headers: ['类型', '数量', '覆盖率', '说明'],
+          rows: [
+            ['条款', '185', '92%', '关联 CNAS / ISO 条款'],
+            ['文件', '386', '96%', '文档实体与版本'],
+            ['记录', '312', '84%', '质控、审核、培训记录'],
+            ['责任人', '146', '78%', '岗位与责任人映射'],
+            ['制度', '88', '90%', '体系文件与管理制度']
+          ]
+        }
+      ],
+      note: '<b>标注协同：</b>支持多人分工与冲突检测；标注完成后自动进入双人复核。'
+    },
+    review: {
+      title: '审核',
+      sub: '双人复核 · 合规校验 · 版本比对 · 审核留痕',
+      action: '进入审核',
+      foot: '待审核 6 份 · 今日已通过 4 份',
+      stats: [['待审核', '6', '份'], ['今日通过', '4', '份'], ['今日驳回', '1', '份'], ['平均耗时', '1.2', '天']],
+      sections: [
+        {
+          title: '待审核文档',
+          headers: ['文档', '提交人', '审核人', '截止时间', '状态'],
+          rows: [
+            ['生物样本库伦理审查指南', '赵敏', '陈洁', '2026-10-22 18:00', '<span class="tag tag-warning">待审核</span>'],
+            ['人类遗传资源管理条例', '王静', '陈洁', '2026-10-22 18:00', '<span class="tag tag-warning">待审核</span>'],
+            ['ISBER Best Practices (2018)', '李强', '周涛', '2026-10-23 12:00', '<span class="tag tag-warning">待审核</span>'],
+            ['生物样本库数据共享专家共识', '赵敏', '周涛', '2026-10-23 18:00', '<span class="tag tag-default">待分配</span>']
+          ]
+        },
+        {
+          title: '审核规则',
+          headers: ['检查项', '规则', '结果'],
+          rows: [
+            ['合规性', '是否符合人类遗传资源与伦理要求', '<span class="tag tag-success">通过</span>'],
+            ['完整性', '标题、版本、发布日期、适用范围齐全', '<span class="tag tag-success">通过</span>'],
+            ['一致性', '与现行版本无冲突条款', '<span class="tag tag-warning">1 处待确认</span>'],
+            ['可追溯性', '来源、采集人、审核人完整', '<span class="tag tag-success">通过</span>']
+          ]
+        }
+      ],
+      note: '<b>审核机制：</b>双人独立复核，任一驳回即退回标注环节；审核意见与版本差异全程留痕。'
+    },
+    publish: {
+      title: '发布',
+      sub: '版本发布 · 目录同步 · 检索索引重建 · 发布审计',
+      action: '发布新版本',
+      foot: '当前版本 v2.4 · 待发布 2 份',
+      stats: [['已发布', '72', '份'], ['本周发布', '8', '份'], ['当前版本', 'v2.4', ''], ['待发布', '2', '份']],
+      sections: [
+        {
+          title: '发布记录',
+          headers: ['版本', '发布范围', '发布人', '发布时间', '状态'],
+          rows: [
+            ['v2.4', '生物样本库知识库 / 国家标准', '周涛', '2026-10-20 17:20', '<span class="tag tag-success">已发布</span>'],
+            ['v2.3', '法规政策 / 专家共识', '周涛', '2026-10-18 10:06', '<span class="tag tag-success">已发布</span>'],
+            ['v2.2', '行业/地方标准', '周涛', '2026-10-15 16:30', '<span class="tag tag-success">已发布</span>'],
+            ['v2.5', '伦理审查 / 数据共享', '周涛', '—', '<span class="tag tag-warning">待发布</span>']
+          ]
+        },
+        {
+          title: '发布检查',
+          headers: ['检查项', '结果', '说明'],
+          rows: [
+            ['审核完成', '<span class="tag tag-success">通过</span>', '6 份文档全部完成双人复核'],
+            ['版本冲突', '<span class="tag tag-success">通过</span>', '无重复或冲突版本'],
+            ['索引重建', '<span class="tag tag-warning">进行中</span>', '预计 5 分钟完成'],
+            ['目录同步', '<span class="tag tag-success">通过</span>', '知识库目录与分类已同步']
+          ]
+        }
+      ],
+      note: '<b>发布策略：</b>按知识库范围灰度发布，发布失败自动回滚到上一版本；发布记录同步写入审计日志。'
+    },
+    update: {
+      title: '更新',
+      sub: '标准变更监测 · 失效提醒 · 增量同步 · 影响分析',
+      action: '检查更新',
+      foot: '监测标准 42 项 · 待确认变更 3 项',
+      stats: [['监测标准', '42', '项'], ['待确认变更', '3', '项'], ['本月更新', '14', '项'], ['失效提醒', '2', '项']],
+      sections: [
+        {
+          title: '变更监测',
+          headers: ['标准 / 文档', '变更类型', '当前版本', '影响', '状态'],
+          rows: [
+            ['GB/T 37864-2019 生物样本库质量和能力通用要求', '修订征求意见', '2019', '高', '<span class="tag tag-warning">待确认</span>'],
+            ['ISO 20387:2018', '定期复审', '2018', '中', '<span class="tag tag-warning">待确认</span>'],
+            ['人类遗传资源管理条例', '政策更新', '2023', '高', '<span class="tag tag-warning">待确认</span>'],
+            ['WS/T 823-2023 生物样本库管理规范', '已更新', '2023', '低', '<span class="tag tag-success">已同步</span>']
+          ]
+        },
+        {
+          title: '更新任务',
+          headers: ['任务', '关联知识', '负责人', '截止时间', '状态'],
+          rows: [
+            ['UPD-20261021-003', 'GB/T 37864-2019', '陈洁', '2026-10-25', '<span class="tag tag-warning">进行中</span>'],
+            ['UPD-20261020-002', 'ISO 20387:2018', '周涛', '2026-10-26', '<span class="tag tag-warning">进行中</span>'],
+            ['UPD-20261018-001', 'WS/T 823-2023', '系统', '2026-10-19', '<span class="tag tag-success">已完成</span>']
+          ]
+        }
+      ],
+      note: '<b>更新机制：</b>定时监测标准与法规变化，命中变更后生成更新任务并通知责任人；失效文档自动下架检索。'
+    },
+    archive: {
+      title: '归档',
+      sub: '历史版本归档 · 冷备 · 保留策略 · 归档审计',
+      action: '新建归档批次',
+      foot: '累计归档 32 批 · 本月 12 批',
+      stats: [['已归档', '32', '批'], ['保留策略', '10', '年'], ['本月归档', '12', '批'], ['冷备容量', '4.6', 'TB']],
+      sections: [
+        {
+          title: '归档批次',
+          headers: ['批次', '内容', '归档时间', '保留期', '状态'],
+          rows: [
+            ['ARC-20261001', '2026-Q3 历史版本', '2026-10-01 02:00', '10 年', '<span class="tag tag-success">已完成</span>'],
+            ['ARC-20260901', '2026-Q2 历史版本', '2026-09-01 02:00', '10 年', '<span class="tag tag-success">已完成</span>'],
+            ['ARC-20260801', '2026-Q1 历史版本', '2026-08-01 02:00', '10 年', '<span class="tag tag-success">已完成</span>'],
+            ['ARC-20261021', '10 月增量归档', '—', '10 年', '<span class="tag tag-warning">进行中</span>']
+          ]
+        },
+        {
+          title: '归档策略',
+          headers: ['对象', '策略', '存储位置', '校验'],
+          rows: [
+            ['历史版本', '按季度归档', '对象存储（冷备）', 'SHA-256 校验'],
+            ['审核记录', '随文档归档', '审计库', '只读锁定'],
+            ['发布记录', '永久保留', '审计库', '只读锁定'],
+            ['删除文档', '先归档后删除', '对象存储（冷备）', '双人确认']
+          ]
+        }
+      ],
+      note: '<b>归档要求：</b>归档数据只读保存，支持按时间、知识库、责任人检索与恢复；恢复操作需审批并记录审计。'
+    },
+    audit: {
+      title: '权限与审计',
+      sub: '角色授权 · 知识库范围 · 访问审计 · 水印追踪',
+      action: '导出审计日志',
+      foot: '今日操作 128 次 · 风险事件 0 次',
+      stats: [['角色', '6', '个'], ['今日操作', '128', '次'], ['权限变更', '3', '次'], ['风险事件', '0', '次']],
+      sections: [
+        {
+          title: '角色权限',
+          headers: ['角色', '知识库范围', '操作权限', '最近变更'],
+          rows: [
+            ['质量管理员', '全部知识库', '查看 / 编辑 / 审核 / 发布', '2026-10-21 16:42'],
+            ['体系专员', '质量体系管理知识库', '查看 / 编辑 / 提交审核', '2026-10-20 11:18'],
+            ['内审小组', '全部知识库（只读）', '查看 / 导出', '2026-10-18 09:30'],
+            ['普通员工', '共享知识库（只读）', '查看', '2026-10-17 14:20'],
+            ['系统管理员', '全部知识库', '全部权限', '2026-10-16 10:06']
+          ]
+        },
+        {
+          title: '审计日志',
+          headers: ['时间', '操作人', '操作', '对象', '结果'],
+          rows: [
+            ['2026-10-21 16:42', '管理员', '权限变更', '体系专员 / 编辑权限', '<span class="tag tag-success">成功</span>'],
+            ['2026-10-21 16:30', '王静', '新增文档', '人类遗传资源管理条例', '<span class="tag tag-success">成功</span>'],
+            ['2026-10-21 15:12', '李强', '执行清洗', '生物样本库知识库', '<span class="tag tag-success">成功</span>'],
+            ['2026-10-21 14:08', '赵敏', '实体标注', 'GB/T 37864-2019', '<span class="tag tag-success">成功</span>'],
+            ['2026-10-21 11:36', '陈洁', '审核通过', '生物样本库伦理审查指南', '<span class="tag tag-success">成功</span>']
+          ]
+        }
+      ],
+      note: '<b>审计能力：</b>所有查看、下载、编辑、发布、权限变更均记录操作人、时间、对象与结果；敏感文档支持水印追踪。'
+    }
+  };
+
+  function renderLife(key) {
+    var d = LIFE[key];
+    if (!d) return;
+    $('#kb-life-title').textContent = d.title;
+    $('#kb-life-sub').textContent = d.sub;
+    $('#kb-life-foot').textContent = d.foot || '';
+    $('#kb-life-action').textContent = d.action;
+    $('#kb-life-action').setAttribute('data-kb-life-action', key);
+    var html = '<div class="kb-modal-stats">' + d.stats.map(function (x) {
+      return '<div class="kb-modal-stat"><span>' + x[0] + '</span><b>' + x[1] + (x[2] ? '<small>' + x[2] + '</small>' : '') + '</b></div>';
+    }).join('') + '</div>';
+    html += d.sections.map(function (sec) {
+      return '<div class="kb-modal-section"><h4>' + sec.title + '</h4><div class="table-wrap"><table class="table"><thead><tr>' +
+        sec.headers.map(function (h) { return '<th>' + h + '</th>'; }).join('') +
+        '</tr></thead><tbody>' + sec.rows.map(function (r) {
+          return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
+        }).join('') + '</tbody></table></div></div>';
+    }).join('');
+    if (d.note) html += '<div class="kb-modal-note">' + d.note + '</div>';
+    $('#kb-life-body').innerHTML = html;
+  }
+
+  function openLife(key) {
+    renderLife(key);
+    var m = $('#kb-life-modal');
+    if (!m) return;
+    m.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLife() {
+    var m = $('#kb-life-modal');
+    if (!m) return;
+    m.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  $all('[data-kb-life]').forEach(function (el) {
+    el.addEventListener('click', function () { openLife(el.getAttribute('data-kb-life')); });
+    if (el.classList.contains('kb-flow-card')) {
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openLife(el.getAttribute('data-kb-life'));
+        }
+      });
+    }
+  });
+  $all('[data-kb-close]').forEach(function (el) {
+    el.addEventListener('click', closeLife);
+  });
+  var lifeModal = $('#kb-life-modal');
+  if (lifeModal) {
+    lifeModal.addEventListener('click', function (e) {
+      if (e.target === lifeModal) closeLife();
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeLife();
+  });
+  var lifeAction = $('#kb-life-action');
+  if (lifeAction) {
+    lifeAction.addEventListener('click', function () {
+      var key = lifeAction.getAttribute('data-kb-life-action');
+      var d = LIFE[key];
+      if (d) toast(d.action + '：演示操作已触发');
+    });
+  }
+
   function applyHash() {
     var h = (location.hash || '').replace('#', '');
+    if (LIFE[h]) { setView('lifecycle'); openLife(h); return; }
     if (['manage', 'docs', 'viz', 'lifecycle'].indexOf(h) > -1) setView(h);
   }
   window.addEventListener('hashchange', applyHash);
