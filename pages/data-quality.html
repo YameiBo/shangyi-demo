@@ -754,6 +754,27 @@
                 </div>
               </div>
             </div>
+            <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
+              <div class="card-header" style="padding:16px 18px 0;">
+                <div class="card-title">📋 质量报告列表</div>
+                <span class="tag tag-primary" id="dq-gov-report-count">4 份</span>
+              </div>
+              <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+                <table class="table">
+                  <thead><tr>
+                    <th>报告名称</th>
+                    <th style="width:110px;">报告周期</th>
+                    <th style="width:110px;">报告范围</th>
+                    <th style="width:140px;">生成时间</th>
+                    <th style="width:84px;">总体评分</th>
+                    <th style="width:74px;">问题数</th>
+                    <th style="width:82px;">状态</th>
+                    <th class="col-actions" style="width:130px;">操作</th>
+                  </tr></thead>
+                  <tbody id="dq-gov-report-body"></tbody>
+                </table>
+              </div>
+            </div>
             <div class="card" style="margin-top:16px;">
               <div class="card-header"><div class="card-title">✨ 优化建议</div><span class="tag tag-primary">基于审计资料与质量趋势</span></div>
               <div class="dq-suggest">
@@ -1700,19 +1721,160 @@
   document.getElementById('dq-task-urge').addEventListener('click', function () {
     window.showToast('已向 12 项进行中任务的责任人发送催办提醒', 'info');
   });
-  document.getElementById('dq-report-generate').addEventListener('click', function () {
+  var DQ_GOV_REPORTS = [
+    { id: 'RPT-20241201-048', name: '2024-12 月度质量报告', cycle: '2024-12 月度', scope: '全库样本', time: '2024-12-01 06:00', score: 97.8, issues: 52, status: '已归档', fmt: 'PDF + Word', size: '2.4 MB' },
+    { id: 'RPT-20241125-047', name: '2024-11 第 48 周质量报告', cycle: '2024-11 第 48 周', scope: '全库样本', time: '2024-11-25 08:00', score: 97.6, issues: 52, status: '已归档', fmt: 'PDF + Word', size: '2.3 MB' },
+    { id: 'RPT-20241001-003', name: '2024-Q3 季度质量报告', cycle: '2024-Q3 季度', scope: '全库样本', time: '2024-10-01 09:00', score: 96.9, issues: 68, status: '已归档', fmt: 'PDF', size: '3.1 MB' },
+    { id: 'RPT-20240915-001', name: '2024 年度审计支持报告', cycle: '2024 年度', scope: '全库样本', time: '2024-09-15 14:00', score: 96.2, issues: 74, status: '已归档', fmt: 'PDF + Word', size: '4.6 MB' }
+  ];
+
+  function dqGovReportTag(status) {
+    return '<span class="tag ' + (status === '已归档' ? 'tag-success' : 'tag-primary') + '">' + status + '</span>';
+  }
+
+  function renderGovReports() {
+    var body = document.getElementById('dq-gov-report-body');
+    if (!body) return;
+    body.innerHTML = DQ_GOV_REPORTS.map(function (r, i) {
+      return '<tr>' +
+        '<td><strong>' + r.name + '</strong></td>' +
+        '<td>' + r.cycle + '</td>' +
+        '<td>' + r.scope + '</td>' +
+        '<td>' + r.time + '</td>' +
+        '<td><b style="color:var(--success);">' + r.score + '</b></td>' +
+        '<td>' + r.issues + '</td>' +
+        '<td>' + dqGovReportTag(r.status) + '</td>' +
+        '<td class="col-actions">' +
+        '<button class="btn-text" data-dq-report-view="' + i + '">查看</button>' +
+        '<button class="btn-text" data-dq-report-dl="' + i + '">下载</button>' +
+        '</td></tr>';
+    }).join('');
+    var count = document.getElementById('dq-gov-report-count');
+    if (count) count.textContent = DQ_GOV_REPORTS.length + ' 份';
+  }
+
+  function openGovReport(i) {
+    var r = DQ_GOV_REPORTS[i];
+    if (!r) return;
+    var dims = DIMS.map(function (d) {
+      return '<div class="dq-report-mini"><span>' + d.key + '</span><b style="color:' + d.color + ';">' + d.pct + '%</b><small>' + d.grade + '</small></div>';
+    }).join('');
+    var issues = [
+      ['储存温度异常', '18 条', '严重', '核查 ULT-03 校准状态并评估受影响批次'],
+      ['知情同意编号缺失', '6 条', '严重', '30 天内补齐，无法补齐冻结出库权限'],
+      ['处理时限超时', '7 条', '中等', '追溯原因并补录超时说明'],
+      ['分装量偏低', '18 条', '轻微', '标记低量并通知下游使用方']
+    ].map(function (x) {
+      return '<tr><td>' + x[0] + '</td><td>' + x[1] + '</td><td><span class="tag ' + (x[2] === '严重' ? 'tag-error' : (x[2] === '中等' ? 'tag-warning' : 'tag-default')) + '">' + x[2] + '</span></td><td>' + x[3] + '</td></tr>';
+    }).join('');
+    var audits = [
+      ['样本接收', '接收记录与交接单', '100%', '齐全'],
+      ['伦理合规', '知情同意书 / 伦理批件', '88%', '待补'],
+      ['设备管理', '校准证书与维护记录', '96%', '齐全'],
+      ['质控记录', 'QC 结果与趋势分析', '92%', '待补'],
+      ['人员培训', '培训与能力评估记录', '100%', '齐全']
+    ].map(function (x) {
+      return '<tr><td>' + x[0] + '</td><td>' + x[1] + '</td><td>' + x[2] + '</td><td><span class="tag ' + (x[3] === '齐全' ? 'tag-success' : 'tag-warning') + '">' + x[3] + '</span></td></tr>';
+    }).join('');
+    var body = '<div class="pm-banner" style="background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark); margin-bottom:14px;">' +
+      '<span class="pm-banner-ico">▤</span><div><strong>报告摘要：</strong>总体质量评分 <b>' + r.score + '</b>/100；发现问题 <b>' + r.issues + '</b> 个；审计资料完整度 <b>92%</b>；优化建议 <b>14</b> 项。</div></div>' +
+      '<div class="dq-report-grid" style="margin-bottom:16px;">' + dims + '</div>' +
+      '<div style="font-size:13px; font-weight:600; margin-bottom:8px;">主要质量问题</div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr><th>问题类型</th><th style="width:74px;">数量</th><th style="width:74px;">级别</th><th>整改建议</th></tr></thead><tbody>' + issues + '</tbody></table></div>' +
+      '<div style="font-size:13px; font-weight:600; margin:14px 0 8px;">审计资料梳理</div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr><th>审计项</th><th>资料名称</th><th style="width:74px;">完整度</th><th style="width:74px;">状态</th></tr></thead><tbody>' + audits + '</tbody></table></div>' +
+      '<div style="font-size:13px; font-weight:600; margin:14px 0 8px;">优化建议</div>' +
+      '<div class="dq-suggest">' +
+      '<div class="dq-suggest-item bad"><b>优先补充伦理合规材料</b><span>6 份样本缺少知情同意书编号，建议 30 天内补齐；无法补齐的记录冻结出库权限。</span></div>' +
+      '<div class="dq-suggest-item warn"><b>提升及时性维度</b><span>及时性 94.7% 为当前短板，建议对超时批次做原因追溯，并将「采集到入库 ≤ 4h」纳入下月培训。</span></div>' +
+      '<div class="dq-suggest-item"><b>完善设备校准证据链</b><span>ULT-03 校准证书缺失，建议统一设备档案命名并自动关联校准记录。</span></div>' +
+      '</div>';
+    modal({
+      title: r.name,
+      sub: r.id + ' · ' + r.cycle + ' · ' + r.scope + ' · ' + r.time,
+      size: 'modal-lg',
+      body: body,
+      footer: '<button class="btn" data-pm-close>关闭</button>' +
+        '<button class="btn" id="dq-gov-report-export-pdf">导出 PDF</button>' +
+        '<button class="btn btn-primary" id="dq-gov-report-export-word">导出 Word</button>',
+      onMount: function (root) {
+        root.querySelector('#dq-gov-report-export-pdf').addEventListener('click', function () { window.showToast('质量报告已导出为 PDF', 'success'); });
+        root.querySelector('#dq-gov-report-export-word').addEventListener('click', function () { window.showToast('质量报告已导出为 Word', 'success'); });
+      }
+    });
+  }
+
+  function openGenerateReport() {
     var cycle = document.getElementById('dq-report-cycle').value;
     var scope = document.getElementById('dq-report-scope').value;
+    var dim = document.getElementById('dq-report-dim').value;
     var fmt = document.getElementById('dq-report-format').value;
     var now = new Date();
     var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
     var t = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
-    document.getElementById('dq-report-last').textContent = '最近生成：' + t + ' · ' + cycle + ' · ' + scope + ' · ' + fmt;
-    window.showToast('多维度质量报告已生成（' + fmt + '），审计资料已自动梳理', 'success');
+    var id = 'RPT-' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '-' + String(100 + DQ_GOV_REPORTS.length).slice(-3);
+    var report = { id: id, name: cycle + ' 多维度质量报告', cycle: cycle, scope: scope, time: t, score: 97.8, issues: 52, status: '已生成', fmt: fmt, size: '2.5 MB' };
+    DQ_GOV_REPORTS.unshift(report);
+    renderGovReports();
+    document.getElementById('dq-report-last').textContent = '最近生成：' + t + ' · ' + report.name + ' · ' + scope + ' · ' + fmt;
+
+    var chapters = [
+      ['① 总体评分', '总体质量评分、趋势与等级', '已生成'],
+      ['② 四维明细', '完整性 / 一致性 / 准确性 / 及时性', '已生成'],
+      ['③ 主要质量问题', '按类型、数量、级别汇总', '已生成'],
+      ['④ 整改建议', '按优先级输出整改与验证建议', '已生成'],
+      ['⑤ 审计资料与附件', '审计资料梳理、完整度与优化建议', '已生成']
+    ].map(function (x) {
+      return '<tr><td><strong>' + x[0] + '</strong></td><td>' + x[1] + '</td><td><span class="tag tag-success">' + x[2] + '</span></td></tr>';
+    }).join('');
+    var body = '<div class="pm-banner" style="background:var(--success-bg); border-color:#B8F0C2; color:#00892A; margin-bottom:14px;">' +
+      '<span class="pm-banner-ico">✓</span><div><strong>报告生成成功。</strong>已汇总 12,847 条样本记录、6 条质量规则、28 条国标规则与审计资料。</div></div>' +
+      '<div class="pm-desc-list">' +
+      '<div class="pm-desc-row"><span class="k">报告编号</span><span class="v">' + id + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">报告名称</span><span class="v">' + report.name + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">报告周期</span><span class="v">' + cycle + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">报告范围</span><span class="v">' + scope + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">报告维度</span><span class="v">' + dim + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">输出格式</span><span class="v">' + fmt + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">生成时间</span><span class="v">' + t + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">文件大小</span><span class="v">' + report.size + '</span></div>' +
+      '</div>' +
+      '<div style="font-size:13px; font-weight:600; margin:14px 0 8px;">报告章节</div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr><th style="width:150px;">章节</th><th>内容</th><th style="width:84px;">状态</th></tr></thead><tbody>' + chapters + '</tbody></table></div>';
+    modal({
+      title: '质量报告生成成功',
+      sub: report.name + ' · ' + scope + ' · ' + fmt,
+      size: 'modal-lg',
+      body: body,
+      footer: '<button class="btn" data-pm-close>关闭</button>' +
+        '<button class="btn" id="dq-gov-report-preview-latest">预览报告</button>' +
+        '<button class="btn btn-primary" id="dq-gov-report-export-latest">导出报告</button>',
+      onMount: function (root) {
+        root.querySelector('#dq-gov-report-preview-latest').addEventListener('click', function () {
+          close();
+          setTimeout(function () { openGovReport(0); }, 220);
+        });
+        root.querySelector('#dq-gov-report-export-latest').addEventListener('click', function () {
+          window.showToast('报告已导出（' + fmt + '）', 'success');
+        });
+      }
+    });
+    window.showToast('多维度质量报告已生成（' + fmt + '），已加入报告列表', 'success');
+  }
+
+  document.getElementById('dq-report-generate').addEventListener('click', openGenerateReport);
+  document.getElementById('dq-report-preview').addEventListener('click', function () { openGovReport(0); });
+  document.getElementById('dq-gov-report-body').addEventListener('click', function (e) {
+    var v = e.target.closest('[data-dq-report-view]');
+    var d = e.target.closest('[data-dq-report-dl]');
+    if (v) openGovReport(+v.getAttribute('data-dq-report-view'));
+    if (d) {
+      var r = DQ_GOV_REPORTS[+d.getAttribute('data-dq-report-dl')];
+      if (r) window.showToast('「' + r.name + '」已开始下载（' + r.fmt + '）', 'success');
+    }
   });
-  document.getElementById('dq-report-preview').addEventListener('click', function () {
-    document.getElementById('dq-report').click();
-  });
+  renderGovReports();
+
   document.getElementById('dq-docs-check').addEventListener('click', function () {
     window.showToast('已完成 42 份管理文件校验：35 份合规、7 份需修订、3 处条款冲突', 'info');
   });
