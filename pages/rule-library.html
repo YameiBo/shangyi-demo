@@ -151,12 +151,22 @@
 
         <!-- ============ 页签 1：规则列表（首要） ============ -->
         <div data-pane="pane-list">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+            <span class="tag tag-primary">📘 GB/T 37864-2019 内置规则 28 条</span>
+            <span style="font-size:12px; color:var(--text-tertiary);">已从标准第 4–8 章提取为可执行规则，覆盖公正性、人员、设施、设备、样本全流程、质控、数据、不符合输出与管理体系。</span>
+            <button class="btn btn-sm" id="rl-rule-gb-filter" style="margin-left:auto;">只看 GB/T 37864</button>
+          </div>
           <div class="pm-toolbar" style="margin-bottom:12px;">
-            <div class="search-box"><input class="input" id="rl-rule-search" placeholder="搜索规则名称 / 触发条件" /></div>
+            <div class="search-box"><input class="input" id="rl-rule-search" placeholder="搜索规则名称 / 条款 / 触发条件" /></div>
             <select class="select" id="rl-rule-status" style="width:120px;height:32px;">
               <option value="">全部状态</option>
               <option value="on">已启用</option>
               <option value="off">已禁用</option>
+            </select>
+            <select class="select" id="rl-rule-source" style="width:158px;height:32px;">
+              <option value="">全部来源</option>
+              <option value="GB/T 37864-2019">GB/T 37864-2019</option>
+              <option value="内部规则">内部规则</option>
             </select>
             <button class="btn" id="rl-rule-reset">重置</button>
           </div>
@@ -165,6 +175,7 @@
               <thead>
                 <tr>
                   <th style="width:186px;">规则名称</th>
+                  <th style="width:150px;">来源 / 条款</th>
                   <th style="width:72px;">版本</th>
                   <th style="width:164px;">触发方式</th>
                   <th>触发条件 → 执行动作</th>
@@ -178,7 +189,7 @@
             </table>
           </div>
           <div style="font-size:12px;color:var(--text-tertiary);margin-top:10px;">
-            共 <strong id="rl-rule-count">0</strong> 条规则 · 停用仅停止自动执行，历史执行记录保留；每次保存自动生成新版本。
+            共 <strong id="rl-rule-count">0</strong> 条规则 · GB/T 37864-2019 内置 <strong id="rl-rule-gb-count">28</strong> 条 · 停用仅停止自动执行，历史执行记录保留；每次保存自动生成新版本。
             可视化编排在「新建规则」页完成，规则列表只做台账与启停 / 模板 / 版本入口。
           </div>
         </div>
@@ -342,6 +353,8 @@
   function rowHtml(r) {
     return '<tr data-id="' + esc(r.id) + '">' +
       '<td><span class="pm-rule-title">' + esc(r.name) + '</span></td>' +
+      '<td><div><span class="tag ' + (r.source === 'GB/T 37864-2019' ? 'tag-primary' : 'tag-default') + '">' + (r.source === 'GB/T 37864-2019' ? 'GB/T 37864' : '内部') + '</span></div>' +
+        '<div style="font-size:11px; color:var(--text-tertiary); margin-top:3px;">' + esc(r.clause || '—') + '</div></td>' +
       '<td><span class="pm-chip pm-chip-type" data-ver>' + esc(r.ver) + '</span></td>' +
       '<td>' + esc(r.trigger || '—') + '</td>' +
       '<td><span class="pm-expr" title="' + esc(r.expr) + '">' + esc(r.expr) + '</span></td>' +
@@ -352,7 +365,7 @@
       '<button class="pm-icon-btn" data-pm="rule-toggle" title="启用 / 停用">⏻</button>' +
       '<button class="pm-icon-btn" data-pm="rule-view" title="查看执行记录">👁</button>' +
       '<button class="pm-icon-btn" data-pm="rule-tpl" title="存为模板">📋</button>' +
-      '<a class="pm-icon-btn" data-pm="rule-edit" href="rule-editor.html" title="编辑规则">✎</a>' +
+      '<a class="pm-icon-btn" data-pm="rule-edit" href="rule-editor.html?rule=' + encodeURIComponent(r.id) + '" title="编辑规则">✎</a>' +
       '<button class="pm-icon-btn" data-pm="rule-delete" title="删除规则">🗑</button>' +
       '</td></tr>';
   }
@@ -360,23 +373,34 @@
     if (!ruleBody) return;
     var kw = (document.getElementById('rl-rule-search').value || '').trim();
     var st = document.getElementById('rl-rule-status').value;
-    var list = (STORE ? STORE.all() : []).filter(function (r) {
-      if (kw && (r.name + ' ' + r.expr).indexOf(kw) < 0) return false;
+    var src = document.getElementById('rl-rule-source').value;
+    var all = STORE ? STORE.all() : [];
+    var list = all.filter(function (r) {
+      if (kw && (r.name + ' ' + r.expr + ' ' + (r.clause || '') + ' ' + (r.source || '')).indexOf(kw) < 0) return false;
       if (st === 'on' && !r.on) return false;
       if (st === 'off' && r.on) return false;
+      if (src && (r.source || '内部规则') !== src) return false;
       return true;
     });
     ruleBody.innerHTML = list.length ? list.map(rowHtml).join('') :
-      '<tr><td colspan="8"><div class="pm-empty"><span class="ico">○</span>没有符合条件的规则，点右上角「＋ 新建规则」开始编排</div></td></tr>';
+      '<tr><td colspan="9"><div class="pm-empty"><span class="ico">○</span>没有符合条件的规则，点右上角「＋ 新建规则」开始编排</div></td></tr>';
     var c = document.getElementById('rl-rule-count');
     if (c) c.textContent = list.length;
+    var gc = document.getElementById('rl-rule-gb-count');
+    if (gc) gc.textContent = all.filter(function (r) { return r.source === 'GB/T 37864-2019'; }).length;
   }
 
   document.getElementById('rl-rule-search').addEventListener('input', renderRules);
   document.getElementById('rl-rule-status').addEventListener('change', renderRules);
+  document.getElementById('rl-rule-source').addEventListener('change', renderRules);
+  document.getElementById('rl-rule-gb-filter').addEventListener('click', function () {
+    document.getElementById('rl-rule-source').value = 'GB/T 37864-2019';
+    renderRules();
+  });
   document.getElementById('rl-rule-reset').addEventListener('click', function () {
     document.getElementById('rl-rule-search').value = '';
     document.getElementById('rl-rule-status').value = '';
+    document.getElementById('rl-rule-source').value = '';
     renderRules();
   });
 
