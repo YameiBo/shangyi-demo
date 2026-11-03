@@ -27,6 +27,58 @@
   .dq-sample-row { cursor: pointer; }
   .dq-sample-row:hover td { background: var(--primary-lighter); }
 </style>
+<style>
+  .dq-main-tabs { margin-bottom: 16px; }
+  .dq-gov-pane { display: none; }
+  .dq-gov-pane.active { display: block; }
+  .dq-gov-grid-2 { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, .65fr); gap: 16px; align-items: start; }
+  .dq-gov-grid-2.dq-wide-left { grid-template-columns: minmax(0, 1.5fr) minmax(0, .5fr); }
+  .dq-gov-stats { margin-bottom: 14px; }
+  .dq-gov-pane .tag { white-space: nowrap; }
+  @media (max-width: 1280px) { .dq-gov-grid-2, .dq-gov-grid-2.dq-wide-left { grid-template-columns: 1fr; } }
+
+  .dq-fusion { display: grid; grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1.15fr) 30px minmax(0, 1fr); align-items: center; gap: 8px; }
+  .dq-fusion-col { display: flex; flex-direction: column; gap: 8px; }
+  .dq-fusion-node { border: 1px solid var(--border-light); border-radius: 8px; padding: 9px 12px; background: #fff; font-size: 12.5px; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 8px; }
+  .dq-fusion-node b { color: var(--text-primary); font-weight: 600; }
+  .dq-fusion-node span { color: var(--text-tertiary); font-size: 11.5px; white-space: nowrap; }
+  .dq-fusion-engine { border-radius: 12px; padding: 20px 14px; text-align: center; color: #fff; background: linear-gradient(135deg, #1E5BD6, #2B7FFF); box-shadow: var(--shadow-md); }
+  .dq-fusion-engine b { display: block; font-size: 15px; margin-bottom: 6px; }
+  .dq-fusion-engine small { font-size: 11.5px; opacity: .88; line-height: 1.6; }
+  .dq-arrow { text-align: center; color: var(--text-placeholder); font-size: 20px; }
+  @media (max-width: 1000px) { .dq-fusion { grid-template-columns: 1fr; } .dq-arrow { transform: rotate(90deg); } }
+
+  .dq-plan-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dq-plan-form label { display: block; font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .dq-plan-form select, .dq-plan-form input { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 9px; background: #fff; font-size: 12.5px; color: var(--text-primary); }
+  .dq-plan-list { display: flex; flex-direction: column; gap: 0; }
+  .dq-plan-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border-light); font-size: 12.5px; }
+  .dq-plan-item:last-child { border-bottom: none; }
+  .dq-plan-item .dq-plan-name { flex: 1; min-width: 0; }
+  .dq-plan-item .dq-plan-name b { display: block; font-weight: 500; }
+  .dq-plan-item .dq-plan-name span { font-size: 11.5px; color: var(--text-tertiary); }
+
+  .dq-task-flow { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
+  .dq-flow-step { flex: 1; min-width: 118px; border: 1px dashed var(--border); border-radius: 8px; padding: 10px 12px; background: var(--bg-page); }
+  .dq-flow-step b { display: block; font-size: 12.5px; margin-bottom: 2px; }
+  .dq-flow-step span { font-size: 11.5px; color: var(--text-tertiary); }
+  .dq-flow-step.done { border-style: solid; border-color: var(--success); background: var(--success-bg); }
+  .dq-flow-step.current { border-style: solid; border-color: var(--primary); background: var(--primary-50); box-shadow: 0 0 0 2px rgba(43,127,255,.08); }
+  .dq-flow-arrow { display: flex; align-items: center; color: var(--text-placeholder); font-size: 14px; }
+
+  .dq-report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dq-report-mini { border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; background: var(--bg-page); }
+  .dq-report-mini span { font-size: 11.5px; color: var(--text-tertiary); }
+  .dq-report-mini b { display: block; font-size: 22px; margin-top: 2px; }
+  .dq-report-mini small { font-size: 11px; color: var(--text-tertiary); }
+  .dq-suggest { display: flex; flex-direction: column; gap: 10px; }
+  .dq-suggest-item { border-left: 3px solid var(--primary); background: var(--bg-page); border-radius: 0 8px 8px 0; padding: 10px 12px; font-size: 12.5px; }
+  .dq-suggest-item b { display: block; margin-bottom: 3px; }
+  .dq-suggest-item span { color: var(--text-tertiary); line-height: 1.6; }
+  .dq-suggest-item.warn { border-left-color: var(--warning); }
+  .dq-suggest-item.bad { border-left-color: var(--error); }
+  .dq-mini-muted { font-size: 12px; color: var(--text-tertiary); }
+</style>
 </head>
 <body>
 <div class="layout">
@@ -158,6 +210,11 @@
           <button class="btn" id="dq-detect">⟳ 立即检测</button>
           <button class="btn btn-primary" id="dq-report">▤ 质量报告</button>
         </div>
+      </div>
+
+      <div class="tabs dq-main-tabs" id="dq-main-tabs">
+        <div class="tab active" data-dq-view="samples">样本质控</div>
+        <div class="tab" data-dq-view="governance">质控治理</div>
       </div>
 
       <!-- ============ 样本列表（2026-10-07） ============ -->
@@ -470,6 +527,290 @@
 
       </div>
       </div>
+      <!-- ============ 质控治理（2026-11-03 新增） ============ -->
+      <div id="dq-governance-view" style="display:none;">
+        <div class="card">
+          <div class="tabs" id="dq-gov-tabs">
+            <div class="tab active" data-dq-gov="plan">合规与计划</div>
+            <div class="tab" data-dq-gov="fusion">智能决策</div>
+            <div class="tab" data-dq-gov="tasks">任务闭环</div>
+            <div class="tab" data-dq-gov="reports">质量报告</div>
+            <div class="tab" data-dq-gov="docs">文件校验</div>
+          </div>
+
+          <!-- 5. 合规性核查与质控计划 -->
+          <div class="dq-gov-pane active" data-dq-pane="plan">
+            <div class="pm-banner" style="background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark);">
+              <span class="pm-banner-ico">✅</span>
+              <div><strong>合规性核查与质控计划</strong> · 自动核查样本合规性，并结合样本类型、来源、储存时长、既往质量与研究用途，生成个性化质控计划。</div>
+            </div>
+            <div class="pm-stat-strip dq-gov-stats">
+              <span class="pm-stat-pill pm-pill-assigned"><span class="pm-dot"></span>待核查 <i>128</i></span>
+              <span class="pm-stat-pill pm-pill-closed"><span class="pm-dot"></span>合规通过 <i>96</i></span>
+              <span class="pm-stat-pill pm-pill-doing"><span class="pm-dot"></span>风险项 <i>12</i></span>
+              <span class="pm-stat-pill pm-pill-open"><span class="pm-dot"></span>已生成计划 <i>24</i></span>
+            </div>
+            <div class="dq-gov-grid-2">
+              <div class="card" style="padding:0; overflow:hidden;">
+                <div class="card-header" style="padding:16px 18px 0;">
+                  <div class="card-title">🔎 合规性自动核查</div>
+                  <button class="btn btn-sm" data-dq-gov-toast="已发起全量合规核查，预计 2 分钟完成">立即核查</button>
+                </div>
+                <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+                  <table class="table">
+                    <thead><tr><th style="width:132px;">样本 / 批次</th><th>核查项</th><th style="width:82px;">结果</th><th style="width:110px;">依据</th><th class="col-actions" style="width:82px;">操作</th></tr></thead>
+                    <tbody>
+                      <tr><td><strong>S-20241201-042</strong></td><td>知情同意与伦理批件</td><td><span class="tag tag-success">合规</span></td><td>7.2.3.4</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已查看 S-20241201-042 的合规核查记录">查看</button></td></tr>
+                      <tr><td><strong>B-20241128-03</strong></td><td>伦理批件 / 知情同意</td><td><span class="tag tag-error">风险</span></td><td>4.1.6</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已生成 B-20241128-03 的合规整改任务">处理</button></td></tr>
+                      <tr><td><strong>S-20241130-018</strong></td><td>运输温度与监管链</td><td><span class="tag tag-success">合规</span></td><td>7.4.2</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已查看 S-20241130-018 的运输核查记录">查看</button></td></tr>
+                      <tr><td><strong>B-20241126-07</strong></td><td>接收隔离与合规评估</td><td><span class="tag tag-warning">待核查</span></td><td>7.3.2.4</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已发起 B-20241126-07 的接收合规评估">核查</button></td></tr>
+                      <tr><td><strong>S-20241129-027</strong></td><td>储存温度记录</td><td><span class="tag tag-error">风险</span></td><td>7.7.3</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已生成 S-20241129-027 的质控任务">处理</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div style="padding:12px 18px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-tertiary);">
+                  核查依据：GB/T 37864-2019、CNAS-CL10:2020、机构伦理与生物安全管理要求
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" style="margin-bottom:12px;">
+                  <div class="card-title">🧬 个性化质控计划</div>
+                  <span class="tag tag-primary">自动生成</span>
+                </div>
+                <div class="dq-plan-form">
+                  <div><label>样本类型</label><select id="dq-plan-type"><option>血清</option><option>血浆</option><option>组织</option><option>尿液</option><option>细胞</option></select></div>
+                  <div><label>样本来源</label><select id="dq-plan-source"><option>门诊</option><option>住院</option><option>科研项目</option><option>外部合作</option></select></div>
+                  <div><label>储存时长</label><select id="dq-plan-age"><option>≤ 3 个月</option><option>3–12 个月</option><option>&gt; 12 个月</option></select></div>
+                  <div><label>研究用途</label><select id="dq-plan-use"><option>基因组</option><option>蛋白组</option><option>细胞培养</option><option>病理检测</option></select></div>
+                </div>
+                <button class="btn btn-primary" id="dq-plan-generate" style="width:100%; margin-top:12px; justify-content:center;">自动生成个性化质控计划</button>
+                <div class="dq-plan-list" id="dq-plan-list" style="margin-top:10px;">
+                  <div class="dq-plan-item"><div class="dq-plan-name"><b>入库外观与分装量复核</b><span>每批次 · 依据 7.8.2</span></div><span class="tag tag-primary">必检</span></div>
+                  <div class="dq-plan-item"><div class="dq-plan-name"><b>储存温度连续监测</b><span>实时 · 依据 7.7.3</span></div><span class="tag tag-primary">必检</span></div>
+                  <div class="dq-plan-item"><div class="dq-plan-name"><b>知情同意与伦理信息复核</b><span>入库时 · 依据 7.2.3.4</span></div><span class="tag tag-warning">按风险</span></div>
+                  <div class="dq-plan-item"><div class="dq-plan-name"><b>QC 抽检与趋势分析</b><span>每周 · 依据 7.8.2.6</span></div><span class="tag tag-warning">按风险</span></div>
+                </div>
+                <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border-light);">
+                  <div class="dq-mini-muted" style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>计划覆盖度</span><b style="color:var(--success);">92%</b></div>
+                  <div class="progress"><div class="progress-bar success" style="width:92%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. 多源信息知识图谱融合 / 智能质控决策 -->
+          <div class="dq-gov-pane" data-dq-pane="fusion">
+            <div class="pm-banner" style="background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark);">
+              <span class="pm-banner-ico">🕸️</span>
+              <div><strong>多源信息知识图谱融合</strong> · 融合 LIS、样本库、设备监测、规则库、知识库/图谱与审计日志，输出可解释的智能质控决策建议。</div>
+            </div>
+            <div class="pm-stat-strip dq-gov-stats">
+              <span class="pm-stat-pill pm-pill-assigned"><span class="pm-dot"></span>融合数据源 <i>6</i></span>
+              <span class="pm-stat-pill pm-pill-open"><span class="pm-dot"></span>图谱实体 <i>1,284</i></span>
+              <span class="pm-stat-pill pm-pill-doing"><span class="pm-dot"></span>规则命中 <i>28</i></span>
+              <span class="pm-stat-pill pm-pill-closed"><span class="pm-dot"></span>决策建议 <i>12</i></span>
+            </div>
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-header"><div class="card-title">🔗 知识图谱融合链路</div><span class="tag tag-default">实时更新</span></div>
+              <div class="dq-fusion">
+                <div class="dq-fusion-col">
+                  <div class="dq-fusion-node"><b>LIS 检验</b><span>12,847 条</span></div>
+                  <div class="dq-fusion-node"><b>样本库</b><span>89 类文档</span></div>
+                  <div class="dq-fusion-node"><b>设备监测</b><span>42 台</span></div>
+                </div>
+                <div class="dq-arrow">→</div>
+                <div class="dq-fusion-engine"><b>质控决策引擎</b><small>知识图谱 + 28 条国标规则<br>+ 历史质控与审计记录</small></div>
+                <div class="dq-arrow">→</div>
+                <div class="dq-fusion-col">
+                  <div class="dq-fusion-node"><b>风险样本</b><span style="color:var(--error);">3 个</span></div>
+                  <div class="dq-fusion-node"><b>建议任务</b><span style="color:var(--primary);">8 项</span></div>
+                  <div class="dq-fusion-node"><b>合规预警</b><span style="color:var(--warning);">2 条</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="dq-gov-grid-2 dq-wide-left">
+              <div class="card" style="padding:0; overflow:hidden;">
+                <div class="card-header" style="padding:16px 18px 0;"><div class="card-title">💡 智能质控建议</div><span class="tag tag-primary">可解释决策</span></div>
+                <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+                  <table class="table">
+                    <thead><tr><th>样本 / 批次</th><th style="width:70px;">风险</th><th>证据链</th><th>建议</th><th style="width:70px;">置信度</th><th class="col-actions" style="width:82px;">操作</th></tr></thead>
+                    <tbody>
+                      <tr><td><strong>S-20241128-013</strong></td><td><span class="tag tag-error">高</span></td><td>温度 -58.2℃ + ULT-03 校准逾期 + 同批次 18 条</td><td>暂停该批次分发，核查设备校准</td><td>96%</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已打开该建议的图谱证据链">查看依据</button></td></tr>
+                      <tr><td><strong>B-20241128-03</strong></td><td><span class="tag tag-warning">中</span></td><td>伦理批件缺失 + 知情同意未关联</td><td>冻结入库，补齐伦理材料</td><td>93%</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已打开该建议的图谱证据链">查看依据</button></td></tr>
+                      <tr><td><strong>S-20241201-071</strong></td><td><span class="tag tag-warning">中</span></td><td>分装量 0.27mL &lt; 0.3mL + 下游蛋白组需求</td><td>标记低量并通知下游</td><td>89%</td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已打开该建议的图谱证据链">查看依据</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header" style="margin-bottom:10px;"><div class="card-title">📚 决策依据</div><span class="tag tag-default">6 条</span></div>
+                <div class="dq-suggest">
+                  <div class="dq-suggest-item"><b>GB/T 37864-2019 · 7.7.3</b><span>储存过程中应测量、监控并记录相关过程参数；温度偏离应评估影响。</span></div>
+                  <div class="dq-suggest-item warn"><b>GB/T 37864-2019 · 4.1.6</b><span>采集与使用应符合伦理规范，缺少伦理批件或知情同意时不得继续。</span></div>
+                  <div class="dq-suggest-item"><b>规则库 · 质控超限与趋势异常</b><span>QC 结果超限时停止问题批次分发并生成不符合项。</span></div>
+                  <div class="dq-suggest-item"><b>规则库 · 样本全链路追溯</b><span>唯一标识、位置或分发记录缺失时阻断状态流转。</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. 质控任务闭环 -->
+          <div class="dq-gov-pane" data-dq-pane="tasks">
+            <div class="pm-banner" style="background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark);">
+              <span class="pm-banner-ico">🔄</span>
+              <div><strong>质控任务闭环</strong> · 支持质控任务自动派发、跟踪、升级与闭环验证，任务全过程留痕可追溯。</div>
+            </div>
+            <div class="pm-stat-strip dq-gov-stats">
+              <span class="pm-stat-pill pm-pill-open"><span class="pm-dot"></span>待派发 <i>8</i></span>
+              <span class="pm-stat-pill pm-pill-doing"><span class="pm-dot"></span>进行中 <i>12</i></span>
+              <span class="pm-stat-pill pm-pill-assigned"><span class="pm-dot"></span>待验证 <i>5</i></span>
+              <span class="pm-stat-pill pm-pill-closed"><span class="pm-dot"></span>已闭环 <i>36</i></span>
+            </div>
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-header"><div class="card-title">闭环流程</div><span class="tag tag-success">本月闭环率 86%</span></div>
+              <div class="dq-task-flow">
+                <div class="dq-flow-step done"><b>自动派发</b><span>规则命中后 5 分钟内</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step current"><b>执行处理</b><span>责任人接收并处理</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step"><b>复核确认</b><span>质量负责人复核</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step"><b>效果验证</b><span>抽样验证整改效果</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step"><b>关闭归档</b><span>写入审计与知识库</span></div>
+              </div>
+            </div>
+            <div class="card" style="padding:0; overflow:hidden;">
+              <div class="card-header" style="padding:16px 18px 0;">
+                <div class="card-title">🧭 质控任务</div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-sm" id="dq-task-urge">批量催办</button>
+                  <button class="btn btn-sm btn-primary" id="dq-task-dispatch">自动派发</button>
+                </div>
+              </div>
+              <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+                <table class="table">
+                  <thead><tr><th style="width:150px;">任务编号</th><th>任务</th><th style="width:120px;">来源</th><th style="width:82px;">责任人</th><th style="width:100px;">截止</th><th style="width:82px;">状态</th><th class="col-actions" style="width:82px;">操作</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>QC-20241201-018</strong></td><td>储存温度异常批次核查</td><td>规则命中</td><td>孙七</td><td>12-02 18:00</td><td><span class="tag tag-warning">进行中</span></td><td class="col-actions"><button class="btn-text" data-dq-task="QC-20241201-018">详情</button></td></tr>
+                    <tr><td><strong>QC-20241201-017</strong></td><td>知情同意编号补录</td><td>合规核查</td><td>李慧</td><td>12-03 12:00</td><td><span class="tag tag-warning">进行中</span></td><td class="col-actions"><button class="btn-text" data-dq-task="QC-20241201-017">详情</button></td></tr>
+                    <tr><td><strong>QC-20241130-016</strong></td><td>分装量偏低原因分析</td><td>智能决策</td><td>周八</td><td>12-04 18:00</td><td><span class="tag tag-default">待派发</span></td><td class="col-actions"><button class="btn-text" data-dq-task="QC-20241130-016">详情</button></td></tr>
+                    <tr><td><strong>QC-20241129-015</strong></td><td>ULT-03 校准状态核查</td><td>设备预警</td><td>孙七</td><td>12-01 18:00</td><td><span class="tag tag-primary">待验证</span></td><td class="col-actions"><button class="btn-text" data-dq-task="QC-20241129-015">详情</button></td></tr>
+                    <tr><td><strong>QC-20241128-014</strong></td><td>伦理批件补齐与复核</td><td>合规核查</td><td>王静</td><td>已关闭</td><td><span class="tag tag-success">已闭环</span></td><td class="col-actions"><button class="btn-text" data-dq-task="QC-20241128-014">详情</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8. 质量报告与审计支持 -->
+          <div class="dq-gov-pane" data-dq-pane="reports">
+            <div class="pm-banner" style="background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark);">
+              <span class="pm-banner-ico">▤</span>
+              <div><strong>质量报告与审计支持</strong> · 自动生成多维度质量报告，支持审计资料自动梳理与优化建议。</div>
+            </div>
+            <div class="pm-stat-strip dq-gov-stats">
+              <span class="pm-stat-pill pm-pill-assigned"><span class="pm-dot"></span>报告模板 <i>6</i></span>
+              <span class="pm-stat-pill pm-pill-closed"><span class="pm-dot"></span>本月已生成 <i>8</i></span>
+              <span class="pm-stat-pill pm-pill-doing"><span class="pm-dot"></span>审计资料完整度 <i>92%</i></span>
+              <span class="pm-stat-pill pm-pill-open"><span class="pm-dot"></span>优化建议 <i>14</i></span>
+            </div>
+            <div class="dq-gov-grid-2">
+              <div class="card">
+                <div class="card-header"><div class="card-title">📊 多维度质量报告生成</div><span class="tag tag-primary">自动汇总</span></div>
+                <div class="dq-plan-form">
+                  <div><label>报告周期</label><select id="dq-report-cycle"><option>2024-12 月度</option><option>2024-Q4 季度</option><option>2024 年度</option></select></div>
+                  <div><label>报告范围</label><select id="dq-report-scope"><option>全库样本</option><option>血液样本</option><option>组织样本</option><option>科研项目样本</option></select></div>
+                  <div><label>报告维度</label><select id="dq-report-dim"><option>完整性 / 一致性 / 准确性 / 及时性</option><option>合规性 / 文档一致性</option><option>全部维度</option></select></div>
+                  <div><label>输出格式</label><select id="dq-report-format"><option>PDF + Word</option><option>PDF</option><option>Word</option></select></div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:12px;">
+                  <button class="btn btn-primary" id="dq-report-generate" style="flex:1; justify-content:center;">生成多维度报告</button>
+                  <button class="btn" id="dq-report-preview" style="justify-content:center;">快速预览</button>
+                </div>
+                <div class="dq-report-grid" style="margin-top:14px;">
+                  <div class="dq-report-mini"><span>完整性</span><b style="color:var(--success);">99.1%</b><small>优秀</small></div>
+                  <div class="dq-report-mini"><span>一致性</span><b style="color:var(--primary);">100%</b><small>优秀</small></div>
+                  <div class="dq-report-mini"><span>准确性</span><b style="color:var(--warning);">98.2%</b><small>良好</small></div>
+                  <div class="dq-report-mini"><span>及时性</span><b style="color:var(--error);">94.7%</b><small>需改进</small></div>
+                </div>
+                <div class="dq-mini-muted" id="dq-report-last" style="margin-top:10px;">最近生成：2024-12-01 06:00 · 数据质量报告 · 2024-11（第 48 周）</div>
+              </div>
+              <div class="card" style="padding:0; overflow:hidden;">
+                <div class="card-header" style="padding:16px 18px 0;"><div class="card-title">🗂️ 审计资料自动梳理</div><span class="tag tag-warning">2 项待补</span></div>
+                <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+                  <table class="table">
+                    <thead><tr><th>审计项</th><th>资料名称</th><th style="width:74px;">完整度</th><th style="width:82px;">状态</th><th>建议</th></tr></thead>
+                    <tbody>
+                      <tr><td>样本接收</td><td>接收记录与交接单</td><td>100%</td><td><span class="tag tag-success">齐全</span></td><td>无需补充</td></tr>
+                      <tr><td>伦理合规</td><td>知情同意书 / 伦理批件</td><td>88%</td><td><span class="tag tag-warning">待补</span></td><td>补齐 6 份同意书编号</td></tr>
+                      <tr><td>设备管理</td><td>校准证书与维护记录</td><td>96%</td><td><span class="tag tag-success">齐全</span></td><td>补充 ULT-03 校准证书</td></tr>
+                      <tr><td>质控记录</td><td>QC 结果与趋势分析</td><td>92%</td><td><span class="tag tag-warning">待补</span></td><td>补充 11 月趋势分析</td></tr>
+                      <tr><td>人员培训</td><td>培训与能力评估记录</td><td>100%</td><td><span class="tag tag-success">齐全</span></td><td>无需补充</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header"><div class="card-title">✨ 优化建议</div><span class="tag tag-primary">基于审计资料与质量趋势</span></div>
+              <div class="dq-suggest">
+                <div class="dq-suggest-item bad"><b>优先补充伦理合规材料</b><span>6 份样本缺少知情同意书编号，建议 30 天内补齐；无法补齐的记录冻结出库权限。</span></div>
+                <div class="dq-suggest-item warn"><b>提升及时性维度</b><span>及时性 94.7% 为当前短板，建议对超时批次做原因追溯，并将「采集到入库 ≤ 4h」纳入下月培训。</span></div>
+                <div class="dq-suggest-item"><b>完善设备校准证据链</b><span>ULT-03 校准证书缺失，建议统一设备档案命名并自动关联校准记录，减少审计补证时间。</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 9. 管理文件校验 -->
+          <div class="dq-gov-pane" data-dq-pane="docs">
+            <div class="pm-banner" style="background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark);">
+              <span class="pm-banner-ico">📑</span>
+              <div><strong>管理文件校验</strong> · 对质量手册、程序文件、SOP 进行合规性与一致性校验，输出可执行的修改建议。</div>
+            </div>
+            <div class="pm-stat-strip dq-gov-stats">
+              <span class="pm-stat-pill pm-pill-assigned"><span class="pm-dot"></span>已校验 <i>42</i></span>
+              <span class="pm-stat-pill pm-pill-closed"><span class="pm-dot"></span>合规 <i>35</i></span>
+              <span class="pm-stat-pill pm-pill-doing"><span class="pm-dot"></span>需修订 <i>7</i></span>
+              <span class="pm-stat-pill pm-pill-open"><span class="pm-dot"></span>条款冲突 <i>3</i></span>
+            </div>
+            <div class="dq-gov-grid-2 dq-wide-left">
+              <div class="card" style="padding:0; overflow:hidden;">
+                <div class="card-header" style="padding:16px 18px 0;">
+                  <div class="card-title">🔍 文件校验结果</div>
+                  <button class="btn btn-sm btn-primary" id="dq-docs-check">开始校验</button>
+                </div>
+                <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+                  <table class="table">
+                    <thead><tr><th>文件名称</th><th style="width:64px;">版本</th><th style="width:110px;">校验类型</th><th style="width:70px;">合规性</th><th style="width:70px;">一致性</th><th>修改建议</th><th style="width:82px;">状态</th><th class="col-actions" style="width:82px;">操作</th></tr></thead>
+                    <tbody>
+                      <tr><td><strong>质量手册</strong></td><td>v2.4</td><td>条款引用</td><td><span class="tag tag-success">合规</span></td><td><span class="tag tag-success">一致</span></td><td>无需修改</td><td><span class="tag tag-success">已通过</span></td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已查看质量手册校验详情">查看</button></td></tr>
+                      <tr><td><strong>样本接收程序</strong></td><td>v1.8</td><td>流程一致性</td><td><span class="tag tag-success">合规</span></td><td><span class="tag tag-error">冲突</span></td><td>与 7.3.2.4 隔离要求不一致</td><td><span class="tag tag-warning">需修订</span></td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已生成样本接收程序的修订任务">修订</button></td></tr>
+                      <tr><td><strong>设备管理程序</strong></td><td>v3.1</td><td>校准周期</td><td><span class="tag tag-success">合规</span></td><td><span class="tag tag-warning">不一致</span></td><td>建议统一为 30 天预警</td><td><span class="tag tag-warning">待确认</span></td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已查看设备管理程序的修改建议">查看</button></td></tr>
+                      <tr><td><strong>知情同意管理规程</strong></td><td>v1.2</td><td>伦理条款</td><td><span class="tag tag-error">需修订</span></td><td><span class="tag tag-warning">不一致</span></td><td>缺少样本撤回条款</td><td><span class="tag tag-warning">需修订</span></td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已生成知情同意管理规程的修订任务">修订</button></td></tr>
+                      <tr><td><strong>数据备份规程</strong></td><td>v1.0</td><td>数据完整性</td><td><span class="tag tag-success">合规</span></td><td><span class="tag tag-success">一致</span></td><td>无需修改</td><td><span class="tag tag-success">已通过</span></td><td class="col-actions"><button class="btn-text" data-dq-gov-toast="已查看数据备份规程校验详情">查看</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div style="padding:12px 18px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-tertiary);">
+                  校验依据：GB/T 37864-2019、CNAS-CL10:2020、机构质量体系文件
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header" style="margin-bottom:10px;"><div class="card-title">✍️ 修改建议</div><span class="tag tag-warning">7 项</span></div>
+                <div class="dq-suggest">
+                  <div class="dq-suggest-item bad"><b>样本接收程序 · 增加隔离条款</b><span>在「接收流程」中补充：未完成法律、伦理、质量评估的样本应隔离保存，评估通过后方可入库（7.3.2.4）。</span></div>
+                  <div class="dq-suggest-item warn"><b>设备管理程序 · 统一校准预警</b><span>将校准预警提前期统一为 30 天，与规则「设备校准与维护到期」保持一致。</span></div>
+                  <div class="dq-suggest-item warn"><b>知情同意管理规程 · 补充撤回条款</b><span>增加供者撤回样本及数据储存和使用的权利说明，明确撤回流程与留痕要求（7.7.8）。</span></div>
+                </div>
+                <button class="btn btn-primary" id="dq-docs-task" style="width:100%; margin-top:12px; justify-content:center;">一键生成修订任务</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -1177,6 +1518,246 @@
     back();
   })();
 
+  /* ==========================================================
+     质控治理（2026-11-03）：截图第 5–9 项能力
+     ========================================================== */
+  var dqMainTabs = document.getElementById('dq-main-tabs');
+  var dqGovView = document.getElementById('dq-governance-view');
+  var dqSampleView = document.getElementById('dq-samples-view');
+  var dqWorkspaceView = document.getElementById('dq-workspace-view');
+  var dqPageActions = document.querySelector('.page-actions');
+  var dqSampleMode = 'samples';
+
+  function dqSetMainView(name) {
+    if (!dqMainTabs || !dqGovView) return;
+    dqMainTabs.querySelectorAll('.tab').forEach(function (t) {
+      t.classList.toggle('active', t.getAttribute('data-dq-view') === name);
+    });
+    if (name === 'governance') {
+      dqSampleMode = (dqWorkspaceView && dqWorkspaceView.style.display !== 'none') ? 'workspace' : 'samples';
+      if (dqSampleView) dqSampleView.style.display = 'none';
+      if (dqWorkspaceView) dqWorkspaceView.style.display = 'none';
+      dqGovView.style.display = '';
+      if (dqPageActions) dqPageActions.style.display = 'none';
+    } else {
+      dqGovView.style.display = 'none';
+      if (dqSampleMode === 'workspace') {
+        if (dqSampleView) dqSampleView.style.display = 'none';
+        if (dqWorkspaceView) dqWorkspaceView.style.display = '';
+        if (dqPageActions) dqPageActions.style.display = '';
+      } else {
+        if (dqSampleView) dqSampleView.style.display = '';
+        if (dqWorkspaceView) dqWorkspaceView.style.display = 'none';
+        if (dqPageActions) dqPageActions.style.display = 'none';
+      }
+    }
+  }
+
+  if (dqMainTabs) {
+    dqMainTabs.addEventListener('click', function (e) {
+      var tab = e.target.closest('[data-dq-view]');
+      if (tab) dqSetMainView(tab.getAttribute('data-dq-view'));
+    });
+  }
+
+  var dqGovTabs = document.getElementById('dq-gov-tabs');
+  if (dqGovTabs) {
+    dqGovTabs.addEventListener('click', function (e) {
+      var tab = e.target.closest('[data-dq-gov]');
+      if (!tab) return;
+      dqGovTabs.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t === tab); });
+      var name = tab.getAttribute('data-dq-gov');
+      document.querySelectorAll('.dq-gov-pane').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-dq-pane') === name);
+      });
+    });
+  }
+
+  document.querySelectorAll('[data-dq-gov-toast]').forEach(function (el) {
+    el.addEventListener('click', function () { window.showToast(el.getAttribute('data-dq-gov-toast'), 'success'); });
+  });
+
+  var DQ_PLAN = {
+    '血清': [
+      ['分装量复核（≥ 0.3mL）', '每批次 · 依据 7.8.2', '必检', 'tag-primary'],
+      ['储存温度连续监测', '实时 · 依据 7.7.3', '必检', 'tag-primary'],
+      ['溶血 / 脂血外观检查', '入库时 · 依据 7.8.1', '必检', 'tag-primary'],
+      ['知情同意与伦理信息复核', '入库时 · 依据 7.2.3.4', '按风险', 'tag-warning']
+    ],
+    '血浆': [
+      ['分装量复核（≥ 0.3mL）', '每批次 · 依据 7.8.2', '必检', 'tag-primary'],
+      ['冻融次数与温度曲线检查', '每次出库 · 依据 7.7.3', '必检', 'tag-primary'],
+      ['纤维蛋白 / 溶血外观检查', '入库时 · 依据 7.8.1', '必检', 'tag-primary'],
+      ['知情同意与伦理信息复核', '入库时 · 依据 7.2.3.4', '按风险', 'tag-warning']
+    ],
+    '组织': [
+      ['组织形态与取材部位复核', '入库时 · 依据 7.2.1', '必检', 'tag-primary'],
+      ['冷冻 / 固定处理记录核查', '每批次 · 依据 7.6.2', '必检', 'tag-primary'],
+      ['储存温度连续监测', '实时 · 依据 7.7.3', '必检', 'tag-primary'],
+      ['伦理批件与知情同意复核', '入库时 · 依据 7.2.3.4', '按风险', 'tag-warning']
+    ],
+    '尿液': [
+      ['分装量与离心参数复核', '每批次 · 依据 7.8.2', '必检', 'tag-primary'],
+      ['储存温度连续监测', '实时 · 依据 7.7.3', '必检', 'tag-primary'],
+      ['浑浊 / 沉淀外观检查', '入库时 · 依据 7.8.1', '必检', 'tag-primary'],
+      ['知情同意与伦理信息复核', '入库时 · 依据 7.2.3.4', '按风险', 'tag-warning']
+    ],
+    '细胞': [
+      ['活率与细胞浓度复核', '每批次 · 依据 7.8.2', '必检', 'tag-primary'],
+      ['冻存 / 复苏记录核查', '每次操作 · 依据 7.6.2', '必检', 'tag-primary'],
+      ['液氮液位与温度监测', '实时 · 依据 7.7.3', '必检', 'tag-primary'],
+      ['伦理批件与知情同意复核', '入库时 · 依据 7.2.3.4', '按风险', 'tag-warning']
+    ]
+  };
+
+  var dqPlanBtn = document.getElementById('dq-plan-generate');
+  if (dqPlanBtn) {
+    dqPlanBtn.addEventListener('click', function () {
+      var type = document.getElementById('dq-plan-type').value;
+      var source = document.getElementById('dq-plan-source').value;
+      var age = document.getElementById('dq-plan-age').value;
+      var use = document.getElementById('dq-plan-use').value;
+      var list = DQ_PLAN[type] || DQ_PLAN['血清'];
+      var host = document.getElementById('dq-plan-list');
+      host.innerHTML = list.map(function (x) {
+        return '<div class="dq-plan-item"><div class="dq-plan-name"><b>' + x[0] + '</b><span>' + x[1] + '</span></div><span class="tag ' + x[3] + '">' + x[2] + '</span></div>';
+      }).join('');
+      window.showToast('已生成「' + type + ' / ' + source + ' / ' + age + ' / ' + use + '」个性化质控计划', 'success');
+    });
+  }
+
+  document.getElementById('dq-task-dispatch').addEventListener('click', function () {
+    window.showToast('已自动派发 8 项质控任务，责任人将在 5 分钟内收到通知', 'success');
+  });
+  document.getElementById('dq-task-urge').addEventListener('click', function () {
+    window.showToast('已向 12 项进行中任务的责任人发送催办提醒', 'info');
+  });
+  document.getElementById('dq-report-generate').addEventListener('click', function () {
+    var cycle = document.getElementById('dq-report-cycle').value;
+    var scope = document.getElementById('dq-report-scope').value;
+    var fmt = document.getElementById('dq-report-format').value;
+    var now = new Date();
+    var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+    var t = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    document.getElementById('dq-report-last').textContent = '最近生成：' + t + ' · ' + cycle + ' · ' + scope + ' · ' + fmt;
+    window.showToast('多维度质量报告已生成（' + fmt + '），审计资料已自动梳理', 'success');
+  });
+  document.getElementById('dq-report-preview').addEventListener('click', function () {
+    document.getElementById('dq-report').click();
+  });
+  document.getElementById('dq-docs-check').addEventListener('click', function () {
+    window.showToast('已完成 42 份管理文件校验：35 份合规、7 份需修订、3 处条款冲突', 'info');
+  });
+  document.getElementById('dq-docs-task').addEventListener('click', function () {
+    window.showToast('已生成 7 项管理文件修订任务，并派发至文件责任人', 'success');
+  });
+
+  var DQ_TASKS = {
+    'QC-20241201-018': {
+      name: '储存温度异常批次核查', source: '规则命中', owner: '孙七', due: '2024-12-02 18:00', status: '进行中',
+      desc: 'S-20241128-013 等 18 条记录温度超出 -80℃±2℃ 范围，需核查 ULT-03 校准状态并评估受影响批次。',
+      steps: [
+        ['规则命中，自动创建质控任务', '2024-12-01 08:00', 'done'],
+        ['自动派发至样本管理员孙七', '2024-12-01 08:05', 'done'],
+        ['责任人核查 ULT-03 校准与温度探头', '2024-12-01 10:20', 'current'],
+        ['质量负责人复核处理结果', '待执行', 'todo'],
+        ['抽样验证并关闭任务', '待执行', 'todo']
+      ]
+    },
+    'QC-20241201-017': {
+      name: '知情同意编号补录', source: '合规核查', owner: '李慧', due: '2024-12-03 12:00', status: '进行中',
+      desc: '6 条样本记录未关联知情同意书编号，需按供者档案与纸质同意书回填，无法补齐的冻结出库权限。',
+      steps: [
+        ['合规核查发现同意书编号缺失', '2024-12-01 09:10', 'done'],
+        ['自动派发至文件管理员李慧', '2024-12-01 09:15', 'done'],
+        ['按供者档案与纸质同意书回填', '2024-12-01 11:00', 'current'],
+        ['质量负责人复核补录结果', '待执行', 'todo'],
+        ['关闭任务并更新审计资料', '待执行', 'todo']
+      ]
+    },
+    'QC-20241130-016': {
+      name: '分装量偏低原因分析', source: '智能决策', owner: '周八', due: '2024-12-04 18:00', status: '待派发',
+      desc: '18 管分装量低于 0.3mL，智能决策建议核查分装工位操作与下游使用要求。',
+      steps: [
+        ['智能决策识别分装量偏低风险', '2024-11-30 16:40', 'done'],
+        ['等待自动派发', '—', 'current'],
+        ['责任人分析原因并制定纠正措施', '待执行', 'todo'],
+        ['复核并验证整改效果', '待执行', 'todo']
+      ]
+    },
+    'QC-20241129-015': {
+      name: 'ULT-03 校准状态核查', source: '设备预警', owner: '孙七', due: '2024-12-01 18:00', status: '待验证',
+      desc: 'ULT-03 校准证书即将到期，需确认校准状态并补充设备档案。',
+      steps: [
+        ['设备校准到期规则触发', '2024-11-29 08:00', 'done'],
+        ['派发设备负责人核查', '2024-11-29 08:05', 'done'],
+        ['完成校准并上传证书', '2024-11-30 15:20', 'done'],
+        ['质量负责人验证证书有效性', '2024-12-01 09:00', 'current'],
+        ['关闭任务并归档', '待执行', 'todo']
+      ]
+    },
+    'QC-20241128-014': {
+      name: '伦理批件补齐与复核', source: '合规核查', owner: '王静', due: '2024-11-29 18:00', status: '已闭环',
+      desc: 'B-20241128-03 伦理批件缺失，已补齐并完成复核，相关样本恢复入库。',
+      steps: [
+        ['合规核查发现伦理批件缺失', '2024-11-28 09:00', 'done'],
+        ['派发至伦理专员王静', '2024-11-28 09:05', 'done'],
+        ['补齐伦理批件与知情同意', '2024-11-28 15:30', 'done'],
+        ['质量负责人复核通过', '2024-11-29 10:10', 'done'],
+        ['关闭任务并归档', '2024-11-29 10:15', 'done']
+      ]
+    }
+  };
+
+  document.querySelectorAll('[data-dq-task]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-dq-task');
+      var t = DQ_TASKS[id];
+      if (!t) return;
+      var body = '<div class="pm-desc-list">' +
+        '<div class="pm-desc-row"><span class="k">任务编号</span><span class="v">' + id + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">任务</span><span class="v">' + t.name + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">来源</span><span class="v">' + t.source + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">责任人</span><span class="v">' + t.owner + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">截止时间</span><span class="v">' + t.due + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">当前状态</span><span class="v">' + t.status + '</span></div>' +
+        '</div>' +
+        '<div class="pm-banner" style="margin-top:14px; margin-bottom:14px; background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark);"><span class="pm-banner-ico">ℹ</span><div>' + t.desc + '</div></div>' +
+        '<div style="font-size:13px; font-weight:600; margin-bottom:4px;">闭环进度</div>' +
+        '<div class="pm-timeline">' + t.steps.map(function (s) {
+          return '<div class="pm-tl-item ' + s[2] + '"><div class="pm-tl-title">' + s[0] + '</div><div class="pm-tl-time">' + s[1] + '</div></div>';
+        }).join('') + '</div>';
+      modal({
+        title: '质控任务 · ' + id,
+        sub: t.name,
+        size: 'modal-lg',
+        body: body,
+        footer: '<button class="btn" data-pm-close>关闭</button>' +
+          (t.status === '已闭环' ? '' : '<button class="btn btn-primary" id="dq-task-close">提交闭环验证</button>'),
+        onMount: function (root) {
+          var b = root.querySelector('#dq-task-close');
+          if (b) b.addEventListener('click', function () {
+            window.showToast(id + ' 已提交闭环验证，等待质量负责人确认', 'success');
+            close();
+          });
+        }
+      });
+    });
+  });
+
+  dqSetMainView('samples');
+
+  function dqApplyHash() {
+    var h = (location.hash || '').replace('#', '');
+    if (h === 'governance') { dqSetMainView('governance'); return; }
+    if (h.indexOf('gov-') === 0) {
+      dqSetMainView('governance');
+      var tab = document.querySelector('#dq-gov-tabs [data-dq-gov="' + h.slice(4) + '"]');
+      if (tab) tab.click();
+    }
+  }
+  window.addEventListener('hashchange', dqApplyHash);
+  dqApplyHash();
 })();
 </script>
 </body>
