@@ -4081,7 +4081,7 @@ window.closeModal = closeModal;
    ========================================================================== */
 (function () {
   var BASE = 'http://192.168.77.144:20080/package1/';
-  var MAP = { 'AI智能问答': { k: 'chat', t: 'AI 智能问答' }, '知识库': { k: 'kb', t: '知识库' }, '知识图谱': { k: 'kg', t: '知识图谱' } };
+  var MAP = { 'AI智能问答': { k: 'chat', t: 'AI 智能问答' }, '知识图谱': { k: 'kg', t: '知识图谱' } };
   var nav = document.querySelector('.sidebar-nav');
   if (!nav) return;
   var items = [];
@@ -4100,6 +4100,8 @@ window.closeModal = closeModal;
   function embed(a) {
     var k = a.getAttribute('data-ext');
     var t = '智能体工作台';
+    var reviewBar = document.getElementById('review-bar');
+    if (reviewBar) reviewBar.style.display = 'none';
     Object.keys(MAP).forEach(function (n) { if (MAP[n].k === k) t = MAP[n].t; });
     nav.querySelectorAll('.sidebar-item').forEach(function (x) { x.classList.remove('active'); });
     a.classList.add('active');
@@ -4118,7 +4120,7 @@ window.closeModal = closeModal;
         '</span>' +
       '</div>' +
       '<div style="border:1px solid var(--border-light); border-radius:12px; overflow:hidden; background:#fff;">' +
-        '<iframe id="ext-frame" src="' + BASE + k + '" title="' + t + '" style="width:100%; height:calc(100vh - 176px); min-height:560px; border:0; display:block;"></iframe>' +
+        '<iframe id="ext-frame" src="' + BASE + k + '" title="' + t + '" style="width:100%; height:calc(100vh - 132px); min-height:560px; border:0; display:block;"></iframe>' +
       '</div>' +
       '<div class="form-hint" style="margin-top:8px;">若右侧空白，通常是该外部系统禁止被 iframe 嵌入（X-Frame-Options / CSP），可点「↗ 新窗口打开」。</div>';
     var rb = document.getElementById('ext-reload');
@@ -4138,6 +4140,7 @@ window.closeModal = closeModal;
   var RS = window.REVIEW_STORE; if (!RS) return;
   var topbar = document.querySelector('.topbar'); if (!topbar) return;
   var host = topbar.parentElement; if (!host) return;
+  if (document.body.hasAttribute('data-no-review-bar')) return;
   var isPages = location.pathname.indexOf('/pages/') >= 0;
   function link(p) { return (isPages ? '' : 'pages/') + p; }
   function render() {
