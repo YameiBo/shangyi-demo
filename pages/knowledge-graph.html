@@ -45,6 +45,37 @@
   .kg-lib-name { display: flex; align-items: center; gap: 9px; font-weight: 500; }
   .kg-lib-name .ico { width: 28px; height: 28px; border-radius: 7px; background: var(--primary-lighter); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; }
   @media (max-width: 900px) { .kg-stat { flex: 1 1 50%; border-bottom: 1px solid var(--border-light); } }
+  .kg-modebar { margin: 12px 18px 0; display: inline-flex; }
+  .kg-tools { display: none; align-items: center; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--border-light); flex-wrap: wrap; }
+  .kg-tools.show { display: flex; }
+  .kg-tools label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+  .kg-tools .select, .kg-tools .input { height: 30px; }
+  .kg-tools .search-box { width: 190px; }
+  .kg-tools .search-box .input { height: 30px; padding-left: 30px; }
+  .kg-tools .btn-sm { height: 28px; }
+  .kg-tools .kg-tool-spacer { margin-left: auto; }
+  .kg-edge-hit { stroke: transparent; stroke-width: 14; cursor: pointer; }
+  .kg-edge { transition: stroke .15s, stroke-width .15s, opacity .15s; }
+  .kg-edge.highlight { stroke: #FF7D00; stroke-width: 2.6; }
+  .kg-edge.dim { opacity: .12; }
+  .kg-node { transition: opacity .15s; }
+  .kg-node.dim { opacity: .16; }
+  .kg-node.highlight circle { stroke: #FF7D00; stroke-width: 3.2; }
+  .kg-node.selected circle { stroke: #1D2129; stroke-width: 3.2; }
+  .kg-node circle, .kg-node text { transition: all .15s; }
+  .kg-graph svg { transition: transform .22s ease; transform-origin: center center; }
+  .kg-detail-title { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 7px; flex-wrap: wrap; }
+  .kg-detail-title .tag { font-weight: 500; }
+  .kg-kv { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 5px 10px; font-size: 12.5px; }
+  .kg-kv .k { color: var(--text-tertiary); }
+  .kg-kv .v { color: var(--text-secondary); }
+  .kg-path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 8px 0 6px; }
+  .kg-path .p-node { padding: 3px 9px; border-radius: 999px; background: var(--primary-lighter); color: var(--primary); font-size: 12px; font-weight: 500; }
+  .kg-path .p-rel { font-size: 11.5px; color: var(--text-tertiary); }
+  .kg-detail-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .kg-detail-item { display: flex; align-items: center; gap: 8px; padding: 6px 9px; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; font-size: 12.5px; }
+  .kg-detail-item .tag { margin-left: auto; flex-shrink: 0; }
+  .kg-log { margin-top: 6px; padding: 6px 9px; background: #fff; border: 1px dashed var(--border); border-radius: 6px; font-size: 12px; color: var(--text-tertiary); line-height: 1.7; max-height: 82px; overflow: auto; }
 </style>
 </head>
 <body data-no-review-bar="1">
@@ -59,6 +90,7 @@
       <a class="sidebar-item" href="http://192.168.77.144:20080/package1/chat"><span class="icon">◉</span>AI智能问答</a>
       <a class="sidebar-item" href="knowledge-base.html"><span class="icon">⚡</span>知识库</a>
       <a class="sidebar-item active" href="knowledge-graph.html"><span class="icon">◇</span>知识图谱</a>
+      <a class="sidebar-item" href="association-mining.html"><span class="icon">🕸</span>关联挖掘</a>
       <!-- 智能分析：按需求去掉（2026-09-23）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
       <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">⚙</span>智能分析</a> -->
 
@@ -200,8 +232,17 @@
             <div class="card-title" id="kg-graph-title">临床知识图谱</div>
             <span class="tag tag-primary" id="kg-graph-tag">50w 实体 · 103w 关系</span>
           </div>
+          <div class="pm-seg kg-modebar" id="kg-modes">
+            <button class="pm-seg-btn active" data-kg-mode="entity">实体</button>
+            <button class="pm-seg-btn" data-kg-mode="relation">关系</button>
+            <button class="pm-seg-btn" data-kg-mode="property">属性</button>
+            <button class="pm-seg-btn" data-kg-mode="path">路径</button>
+            <button class="pm-seg-btn" data-kg-mode="subgraph">子图</button>
+            <button class="pm-seg-btn" data-kg-mode="explore">图探索</button>
+          </div>
+          <div class="kg-tools" id="kg-tools"></div>
           <div class="kg-graph" id="kg-graph"></div>
-          <div class="kg-node-detail" id="kg-node-detail">点击节点查看实体详情；切换上方图谱库可查看不同知识域。</div>
+          <div class="kg-node-detail" id="kg-node-detail">点击节点查看实体详情；切换上方视图可查看关系、属性、路径、子图与图探索。</div>
           <div class="kg-graph-foot"><span>实体节点按类型着色 · 连线表示关系</span><span>演示数据 · 2026-11-03</span></div>
         </div>
 
@@ -302,7 +343,29 @@
     }
   };
 
+  var REL_LABELS = {
+    clinical: ['表现为', '治疗', '诊断', '关联', '样本关联', '样本来源', '疗效', '检测'],
+    sample: ['来源于', '使用设备', '存储于', '质控于', '关联项目', '参与', '服务', '监测'],
+    quality: ['引用', '归属', '依据', '负责', '适用', '归属', '适用', '填写']
+  };
+
   var current = 'clinical';
+  var mode = 'entity';
+  var selectedNode = null;
+  var zoom = 1;
+  var exploreLog = [];
+
+  function relLabel(key, i) { return (REL_LABELS[key] || [])[i] || '关联'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  function nodeEls() { return Array.prototype.slice.call(document.querySelectorAll('#kg-graph .kg-node')); }
+  function edgeEls() { return Array.prototype.slice.call(document.querySelectorAll('#kg-graph .kg-edge')); }
+
+  function resetHighlights() {
+    nodeEls().forEach(function (n) { n.classList.remove('dim', 'highlight', 'selected'); });
+    edgeEls().forEach(function (e) { e.classList.remove('dim', 'highlight'); });
+  }
+
+
 
   function renderBars(host, rows) {
     host.innerHTML = rows.map(function (r) {
@@ -311,26 +374,311 @@
   }
 
   function renderGraph(d) {
-    var svg = '<svg viewBox="0 0 800 430" preserveAspectRatio="xMidYMid meet" aria-label="' + d.name + '">';
-    d.graph.edges.forEach(function (e) {
+    var svg = '<svg viewBox="0 0 800 430" preserveAspectRatio="xMidYMid meet" aria-label="' + esc(d.name) + '">';
+    d.graph.edges.forEach(function (e, i) {
       var a = d.graph.nodes[e[0]], b = d.graph.nodes[e[1]];
-      svg += '<line class="kg-edge" x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '"></line>';
+      svg += '<line class="kg-edge" data-edge-vis="' + i + '" x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '"></line>';
+    });
+    d.graph.edges.forEach(function (e, i) {
+      var a = d.graph.nodes[e[0]], b = d.graph.nodes[e[1]];
+      svg += '<line class="kg-edge-hit" data-edge="' + i + '" x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '"></line>';
     });
     d.graph.nodes.forEach(function (n, i) {
       svg += '<g class="kg-node" data-idx="' + i + '" role="button" tabindex="0">' +
-        '<title>' + n.label + ' · ' + n.desc + '</title>' +
+        '<title>' + esc(n.label) + ' · ' + esc(n.desc) + '</title>' +
         '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + n.r + '" fill="' + n.color + '"></circle>' +
-        '<text x="' + n.x + '" y="' + n.y + '">' + n.label + '</text>' +
+        '<text x="' + n.x + '" y="' + n.y + '">' + esc(n.label) + '</text>' +
         '</g>';
     });
     svg += '</svg>';
-    $('#kg-graph').innerHTML = svg;
+    var host = $('#kg-graph');
+    host.innerHTML = svg;
+    host.querySelector('svg').style.transform = 'scale(' + zoom + ')';
+  }
+
+  function highlightSubset(nodeSet, edgeSet, label) {
+    nodeEls().forEach(function (n) {
+      var i = +n.getAttribute('data-idx');
+      var on = nodeSet[i] !== undefined;
+      n.classList.toggle('dim', !on);
+      n.classList.toggle('highlight', on);
+    });
+    edgeEls().forEach(function (e) {
+      var i = +e.getAttribute('data-edge-vis');
+      var on = edgeSet[i] !== undefined;
+      e.classList.toggle('dim', !on);
+      e.classList.toggle('highlight', on);
+    });
+    if (selectedNode != null) {
+      var sel = nodeEls().filter(function (n) { return +n.getAttribute('data-idx') === selectedNode; })[0];
+      if (sel) sel.classList.add('selected');
+    }
+  }
+
+  function kv(rows) {
+    return '<div class="kg-kv">' + rows.map(function (r) { return '<span class="k">' + r[0] + '</span><span class="v">' + r[1] + '</span>'; }).join('') + '</div>';
+  }
+
+  function neighborEdges(d, i) {
+    return d.graph.edges.map(function (e, idx) { return { e: e, idx: idx }; }).filter(function (x) { return x.e[0] === i || x.e[1] === i; });
+  }
+
+  function showNode(i) {
+    var d = KG[current];
+    var n = d.graph.nodes[i];
+    if (!n) return;
+    selectedNode = i;
+    resetHighlights();
+    var inc = neighborEdges(d, i);
+    var nodeSet = {}; nodeSet[i] = 1;
+    var edgeSet = {};
+    inc.forEach(function (x) { edgeSet[x.idx] = 1; nodeSet[x.e[0]] = 1; nodeSet[x.e[1]] = 1; });
+    highlightSubset(nodeSet, edgeSet, 'node');
+    nodeEls().forEach(function (el) { if (+el.getAttribute('data-idx') === i) el.classList.add('selected'); });
+
+    var title = '<div class="kg-detail-title">' + esc(n.label) + ' <span class="tag tag-primary">实体</span><span class="tag tag-default">' + esc(d.name) + '</span></div>';
+    if (mode === 'property') {
+      $('#kg-node-detail').innerHTML = title + kv([
+        ['实体 ID', 'ENT-' + d.name.slice(0, 2) + '-' + String(1000 + i)],
+        ['实体类型', n.label],
+        ['属性项', '12 项'],
+        ['来源', d.name],
+        ['置信度', '96.4%'],
+        ['最近更新', d.updated],
+        ['关联关系', inc.length + ' 条（示例视图）']
+      ]) + '<div class="kg-detail-list">' + inc.map(function (x) {
+        var other = d.graph.nodes[x.e[0] === i ? x.e[1] : x.e[0]];
+        return '<div class="kg-detail-item"><span>' + esc(other.label) + '</span><span class="tag tag-default">' + relLabel(current, x.idx) + '</span></div>';
+      }).join('') + '</div>';
+      return;
+    }
+    if (mode === 'relation') {
+      $('#kg-node-detail').innerHTML = title + kv([
+        ['实体类型', n.label],
+        ['关联关系', inc.length + ' 条'],
+        ['实体描述', n.desc]
+      ]) + '<div class="kg-detail-list">' + inc.map(function (x) {
+        var other = d.graph.nodes[x.e[0] === i ? x.e[1] : x.e[0]];
+        return '<div class="kg-detail-item"><span><b>' + esc(n.label) + '</b> → ' + esc(other.label) + '</span><span class="tag tag-primary">' + relLabel(current, x.idx) + '</span></div>';
+      }).join('') + '</div>';
+      return;
+    }
+    if (mode === 'explore') {
+      exploreLog.unshift('选择实体「' + n.label + '」，高亮 ' + inc.length + ' 条关联关系');
+      exploreLog = exploreLog.slice(0, 5);
+      $('#kg-node-detail').innerHTML = title + kv([
+        ['实体类型', n.label],
+        ['实体描述', n.desc],
+        ['关联关系', inc.length + ' 条'],
+        ['探索状态', '已展开 1 跳邻居']
+      ]) + '<div class="kg-detail-list">' + inc.map(function (x) {
+        var other = d.graph.nodes[x.e[0] === i ? x.e[1] : x.e[0]];
+        return '<div class="kg-detail-item"><span>' + esc(n.label) + ' — ' + esc(other.label) + '</span><span class="tag tag-default">' + relLabel(current, x.idx) + '</span></div>';
+      }).join('') + '</div><div class="kg-log">' + exploreLog.map(function (x) { return '· ' + esc(x); }).join('<br>') + '</div>';
+      return;
+    }
+    $('#kg-node-detail').innerHTML = title + kv([
+      ['实体类型', n.label],
+      ['实体描述', n.desc],
+      ['来源图谱', d.name],
+      ['置信度', '96.4%'],
+      ['最近更新', d.updated],
+      ['关联关系', inc.length + ' 条']
+    ]) + '<div class="kg-detail-list">' + inc.map(function (x) {
+      var other = d.graph.nodes[x.e[0] === i ? x.e[1] : x.e[0]];
+      return '<div class="kg-detail-item"><span>关系：<b>' + relLabel(current, x.idx) + '</b> → ' + esc(other.label) + '</span><span class="tag tag-default">' + esc(other.label) + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  function showEdge(i) {
+    var d = KG[current];
+    var e = d.graph.edges[i];
+    if (!e) return;
+    var a = d.graph.nodes[e[0]], b = d.graph.nodes[e[1]];
+    selectedNode = null;
+    resetHighlights();
+    var nodeSet = {}; nodeSet[e[0]] = 1; nodeSet[e[1]] = 1;
+    var edgeSet = {}; edgeSet[i] = 1;
+    highlightSubset(nodeSet, edgeSet, 'edge');
+    $('#kg-node-detail').innerHTML = '<div class="kg-detail-title">' + esc(a.label) + ' → ' + esc(b.label) + ' <span class="tag tag-primary">关系</span></div>' +
+      kv([
+        ['关系类型', relLabel(current, i)],
+        ['源实体', a.label],
+        ['目标实体', b.label],
+        ['置信度', (88 + (i * 2) % 10) + '%'],
+        ['证据数', (3 + i) + ' 条'],
+        ['来源', d.name],
+        ['最近更新', d.updated]
+      ]) +
+      '<div class="kg-detail-list"><div class="kg-detail-item"><span>证据：' + esc(a.label) + '相关条款 / 记录 / 样本</span><span class="tag tag-success">已核验</span></div>' +
+      '<div class="kg-detail-item"><span>属性：关系权重 ' + (0.7 + (i % 3) * 0.1).toFixed(1) + ' · 方向性 有向</span><span class="tag tag-default">示例</span></div></div>';
+  }
+
+  function renderTools() {
+    var host = $('#kg-tools');
+    var d = KG[current];
+    if (mode === 'path') {
+      host.innerHTML = '<label>起点</label><select class="select" id="kg-path-start">' + d.graph.nodes.map(function (n, i) { return '<option value="' + i + '"' + (i === 1 ? ' selected' : '') + '>' + esc(n.label) + '</option>'; }).join('') + '</select>' +
+        '<label>终点</label><select class="select" id="kg-path-end">' + d.graph.nodes.map(function (n, i) { return '<option value="' + i + '"' + (i === 4 ? ' selected' : '') + '>' + esc(n.label) + '</option>'; }).join('') + '</select>' +
+        '<button class="btn btn-sm btn-primary" id="kg-path-find">查找路径</button><span class="kg-tool-spacer"></span><span style="font-size:12px;color:var(--text-tertiary);">支持 1–4 跳路径分析</span>';
+      host.classList.add('show');
+      $('#kg-path-find').addEventListener('click', findPath);
+    } else if (mode === 'subgraph') {
+      host.innerHTML = '<label>中心实体</label><select class="select" id="kg-sub-center">' + d.graph.nodes.map(function (n, i) { return '<option value="' + i + '">' + esc(n.label) + '</option>'; }).join('') + '</select>' +
+        '<label>扩展深度</label><select class="select" id="kg-sub-depth"><option value="1">1 跳</option><option value="2" selected>2 跳</option></select>' +
+        '<button class="btn btn-sm btn-primary" id="kg-sub-build">生成子图</button><span class="kg-tool-spacer"></span><span style="font-size:12px;color:var(--text-tertiary);">按中心实体与深度裁剪子图</span>';
+      host.classList.add('show');
+      $('#kg-sub-build').addEventListener('click', buildSubgraph);
+      buildSubgraph();
+    } else if (mode === 'explore') {
+      host.innerHTML = '<div class="search-box"><input class="input" id="kg-explore-search" placeholder="搜索实体" /></div>' +
+        '<button class="btn btn-sm" id="kg-explore-search-btn">定位</button>' +
+        '<button class="btn btn-sm" id="kg-explore-expand">扩展邻居</button>' +
+        '<button class="btn btn-sm" id="kg-explore-reset">重置视图</button>' +
+        '<span class="kg-tool-spacer"></span><button class="btn btn-sm" id="kg-zoom-out">−</button><span style="font-size:12px;color:var(--text-tertiary);" id="kg-zoom-label">100%</span><button class="btn btn-sm" id="kg-zoom-in">＋</button>';
+      host.classList.add('show');
+      $('#kg-explore-search-btn').addEventListener('click', exploreSearch);
+      $('#kg-explore-search').addEventListener('keydown', function (e) { if (e.key === 'Enter') exploreSearch(); });
+      $('#kg-explore-expand').addEventListener('click', function () { if (selectedNode == null) { toast('请先点击一个实体节点', 'info'); return; } expandNode(selectedNode, true); });
+      $('#kg-explore-reset').addEventListener('click', function () { resetExplore(); });
+      $('#kg-zoom-in').addEventListener('click', function () { setZoom(zoom + 0.15); });
+      $('#kg-zoom-out').addEventListener('click', function () { setZoom(zoom - 0.15); });
+    } else {
+      host.innerHTML = '';
+      host.classList.remove('show');
+    }
+  }
+
+  function setZoom(v) {
+    zoom = Math.max(0.7, Math.min(1.6, v));
+    var svg = $('#kg-graph svg');
+    if (svg) svg.style.transform = 'scale(' + zoom + ')';
+    var label = $('#kg-zoom-label');
+    if (label) label.textContent = Math.round(zoom * 100) + '%';
+  }
+
+  function resetExplore() {
+    selectedNode = null;
+    exploreLog = [];
+    zoom = 1;
+    renderGraph(KG[current]);
+    $('#kg-node-detail').textContent = '图探索：点击实体节点展开 1 跳邻居，或使用上方搜索定位实体。';
+  }
+
+  function expandNode(i, log) {
+    var d = KG[current];
+    var n = d.graph.nodes[i];
+    var inc = neighborEdges(d, i);
+    var nodeSet = {}; nodeSet[i] = 1;
+    var edgeSet = {};
+    inc.forEach(function (x) { edgeSet[x.idx] = 1; nodeSet[x.e[0]] = 1; nodeSet[x.e[1]] = 1; });
+    selectedNode = i;
+    highlightSubset(nodeSet, edgeSet, 'node');
+    if (log) {
+      exploreLog.unshift('扩展「' + n.label + '」的 ' + inc.length + ' 条邻居关系');
+      exploreLog = exploreLog.slice(0, 5);
+    }
+    $('#kg-node-detail').innerHTML = '<div class="kg-detail-title">' + esc(n.label) + ' <span class="tag tag-primary">已展开</span></div>' +
+      kv([['实体类型', n.label], ['邻居节点', (Object.keys(nodeSet).length - 1) + ' 个'], ['关系数量', inc.length + ' 条'], ['探索深度', '1 跳']]) +
+      '<div class="kg-detail-list">' + inc.map(function (x) {
+        var other = d.graph.nodes[x.e[0] === i ? x.e[1] : x.e[0]];
+        return '<div class="kg-detail-item"><span>' + esc(other.label) + '</span><span class="tag tag-default">' + relLabel(current, x.idx) + '</span></div>';
+      }).join('') + '</div><div class="kg-log">' + exploreLog.map(function (x) { return '· ' + esc(x); }).join('<br>') + '</div>';
+  }
+
+  function exploreSearch() {
+    var kw = ($('#kg-explore-search').value || '').trim();
+    if (!kw) { toast('请输入实体名称', 'info'); return; }
+    var d = KG[current];
+    var idx = -1;
+    d.graph.nodes.forEach(function (n, i) { if (idx < 0 && n.label.indexOf(kw) >= 0) idx = i; });
+    if (idx < 0) { toast('当前图谱中未找到「' + kw + '」', 'info'); return; }
+    expandNode(idx, false);
+    exploreLog.unshift('搜索定位「' + d.graph.nodes[idx].label + '」');
+    toast('已定位到「' + d.graph.nodes[idx].label + '」', 'success');
+  }
+
+  function findPath() {
+    var d = KG[current];
+    var s = +$('#kg-path-start').value, t = +$('#kg-path-end').value;
+    if (s === t) { toast('起点与终点不能相同', 'info'); return; }
+    var adj = {};
+    d.graph.edges.forEach(function (e, i) {
+      if (!adj[e[0]]) adj[e[0]] = [];
+      if (!adj[e[1]]) adj[e[1]] = [];
+      adj[e[0]].push({ to: e[1], edge: i });
+      adj[e[1]].push({ to: e[0], edge: i });
+    });
+    var queue = [s], seen = {}; seen[s] = true;
+    var parent = {}, parentEdge = {}, found = false;
+    while (queue.length) {
+      var cur = queue.shift();
+      if (cur === t) { found = true; break; }
+      (adj[cur] || []).forEach(function (x) {
+        if (!seen[x.to]) { seen[x.to] = true; parent[x.to] = cur; parentEdge[x.to] = x.edge; queue.push(x.to); }
+      });
+    }
+    if (!found) {
+      resetHighlights();
+      $('#kg-node-detail').innerHTML = '<div class="kg-detail-title">路径分析</div><div class="kg-kv"><span class="k">结果</span><span class="v">未找到可达路径</span></div>';
+      toast('未找到可达路径', 'info');
+      return;
+    }
+    var nodes = [t], edges = [], cur = t;
+    while (cur !== s) {
+      edges.unshift(parentEdge[cur]);
+      cur = parent[cur];
+      nodes.unshift(cur);
+    }
+    var nodeSet = {}, edgeSet = {};
+    nodes.forEach(function (x) { nodeSet[x] = 1; });
+    edges.forEach(function (x) { edgeSet[x] = 1; });
+    selectedNode = s;
+    highlightSubset(nodeSet, edgeSet, 'path');
+    var pathHtml = nodes.map(function (x, i) {
+      if (i === 0) return '<span class="p-node">' + esc(d.graph.nodes[x].label) + '</span>';
+      return '<span class="p-rel">—' + relLabel(current, edges[i - 1]) + '→</span><span class="p-node">' + esc(d.graph.nodes[x].label) + '</span>';
+    }).join('');
+    $('#kg-node-detail').innerHTML = '<div class="kg-detail-title">路径分析结果 <span class="tag tag-primary">' + (nodes.length - 1) + ' 跳</span></div>' +
+      '<div class="kg-path">' + pathHtml + '</div>' +
+      kv([['起点', d.graph.nodes[s].label], ['终点', d.graph.nodes[t].label], ['路径长度', (nodes.length - 1) + ' 跳'], ['置信度', (91 - nodes.length) + '%'], ['说明', '按关系权重与证据数排序（示例）']]);
+  }
+
+  function buildSubgraph() {
+    var d = KG[current];
+    var center = +$('#kg-sub-center').value;
+    var depth = +$('#kg-sub-depth').value;
+    var adj = {};
+    d.graph.edges.forEach(function (e, i) {
+      if (!adj[e[0]]) adj[e[0]] = [];
+      if (!adj[e[1]]) adj[e[1]] = [];
+      adj[e[0]].push({ to: e[1], edge: i });
+      adj[e[1]].push({ to: e[0], edge: i });
+    });
+    var nodeSet = {}, edgeSet = {}, dist = {}; nodeSet[center] = 1; dist[center] = 0;
+    var queue = [center];
+    while (queue.length) {
+      var cur = queue.shift();
+      if (dist[cur] >= depth) continue;
+      (adj[cur] || []).forEach(function (x) {
+        edgeSet[x.edge] = 1;
+        if (nodeSet[x.to] === undefined) { nodeSet[x.to] = 1; dist[x.to] = dist[cur] + 1; queue.push(x.to); }
+      });
+    }
+    selectedNode = center;
+    highlightSubset(nodeSet, edgeSet, 'subgraph');
+    $('#kg-node-detail').innerHTML = '<div class="kg-detail-title">子图 <span class="tag tag-primary">' + depth + ' 跳</span></div>' +
+      '<div class="kg-path"><span class="p-node">中心：' + esc(d.graph.nodes[center].label) + '</span></div>' +
+      kv([['中心实体', d.graph.nodes[center].label], ['扩展深度', depth + ' 跳'], ['子图节点', Object.keys(nodeSet).length + ' 个'], ['子图关系', Object.keys(edgeSet).length + ' 条'], ['节点类型', Object.keys(nodeSet).map(function (x) { return d.graph.nodes[x].label; }).join(' / ')]]);
   }
 
   function renderKG(key) {
     var d = KG[key];
     if (!d) return;
     current = key;
+    selectedNode = null;
+    zoom = 1;
+    exploreLog = [];
     document.querySelectorAll('#kg-tabs .tab').forEach(function (t) {
       t.classList.toggle('active', t.getAttribute('data-kg') === key);
     });
@@ -348,7 +696,10 @@
     renderBars($('#kg-entity-bars'), d.entityBars);
     renderBars($('#kg-relation-bars'), d.relationBars);
     renderGraph(d);
-    $('#kg-node-detail').textContent = '点击节点查看实体详情；当前图谱：' + d.name;
+    renderTools();
+    $('#kg-node-detail').textContent = mode === 'entity'
+      ? '点击节点查看实体详情；当前图谱：' + d.name
+      : (mode === 'relation' ? '点击节点查看关系列表，点击连线查看关系详情' : (mode === 'property' ? '点击节点查看属性' : '使用上方工具进行分析'));
     document.querySelectorAll('#kg-lib-body tr').forEach(function (tr) {
       tr.classList.toggle('active', tr.getAttribute('data-kg-row') === key);
     });
@@ -359,20 +710,42 @@
     if (tab) renderKG(tab.getAttribute('data-kg'));
   });
 
+  document.getElementById('kg-modes').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-kg-mode]');
+    if (!b) return;
+    mode = b.getAttribute('data-kg-mode');
+    selectedNode = null;
+    document.querySelectorAll('#kg-modes .pm-seg-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+    resetHighlights();
+    renderTools();
+    renderGraph(KG[current]);
+    $('#kg-node-detail').textContent = mode === 'entity' ? '点击节点查看实体详情' : (mode === 'relation' ? '点击节点查看关系列表，点击连线查看关系详情' : (mode === 'property' ? '点击节点查看属性' : '使用上方工具进行分析'));
+  });
+
   document.getElementById('kg-graph').addEventListener('click', function (e) {
+    var edge = e.target.closest('[data-edge]');
+    if (edge) { showEdge(+edge.getAttribute('data-edge')); return; }
     var g = e.target.closest('.kg-node');
     if (!g) return;
-    var d = KG[current];
-    var n = d.graph.nodes[+g.getAttribute('data-idx')];
-    var deg = d.graph.edges.filter(function (x) { return x[0] === +g.getAttribute('data-idx') || x[1] === +g.getAttribute('data-idx'); }).length;
-    $('#kg-node-detail').innerHTML = '<b>' + n.label + '</b> · ' + n.desc + ' · 当前关联关系 ' + deg + ' 条（示例视图）';
+    var idx = +g.getAttribute('data-idx');
+    if (mode === 'explore') { expandNode(idx, true); return; }
+    showNode(idx);
   });
 
   function doSearch() {
     var kw = ($('#kg-search').value || '').trim();
     if (!kw) { toast('请输入实体或关系关键字', 'info'); return; }
-    toast('已在「' + KG[current].name + '」中检索「' + kw + '」', 'success');
-    $('#kg-node-detail').innerHTML = '检索关键字：<b>' + kw + '</b> · 命中实体与关系将在图谱中高亮（演示）';
+    var d = KG[current];
+    var idx = -1;
+    d.graph.nodes.forEach(function (n, i) { if (idx < 0 && n.label.indexOf(kw) >= 0) idx = i; });
+    if (idx >= 0) {
+      expandNode(idx, false);
+      $('#kg-node-detail').innerHTML = '检索关键字：<b>' + esc(kw) + '</b> · 已定位实体「' + esc(d.graph.nodes[idx].label) + '」';
+      toast('已定位到「' + d.graph.nodes[idx].label + '」', 'success');
+    } else {
+      toast('已在「' + d.name + '」中检索「' + kw + '」', 'success');
+      $('#kg-node-detail').innerHTML = '检索关键字：<b>' + esc(kw) + '</b> · 未定位到实体节点（演示）';
+    }
   }
   $('#kg-search-btn').addEventListener('click', doSearch);
   $('#kg-search').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });

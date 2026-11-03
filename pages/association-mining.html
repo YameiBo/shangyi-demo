@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" href="data:," />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>关联挖掘  - 复旦大学上海医学院样本库质量管理智能体平台</title>
+<link rel="stylesheet" href="../assets/styles.css" />
+<link rel="stylesheet" href="../assets/agent-widget.css" />
+<link rel="stylesheet" href="../assets/platform-modules.css" />
+<style>
+  .am-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .am-stat { background: #fff; border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 18px; }
+  .am-stat span { display: block; font-size: 12px; color: var(--text-tertiary); }
+  .am-stat b { display: block; margin-top: 4px; font-size: 24px; line-height: 1.2; }
+  .am-stat small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--text-tertiary); }
+  @media (max-width: 1100px) { .am-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .am-panel { display: none; }
+  .am-panel.active { display: block; }
+  .am-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, .65fr); gap: 16px; align-items: start; }
+  @media (max-width: 1200px) { .am-grid { grid-template-columns: 1fr; } }
+  .am-card { padding: 0; overflow: hidden; }
+  .am-card .card-header { padding: 16px 18px 0; }
+  .am-table th:first-child, .am-table td:first-child { white-space: nowrap; }
+  .am-table .tag { white-space: nowrap; }
+  .am-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 18px 14px; }
+  .am-form label { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+  .am-form .select { width: 170px; height: 32px; }
+  .am-path-card { border: 1px solid var(--border-light); border-radius: 8px; padding: 12px 14px; background: #fff; margin-bottom: 10px; }
+  .am-path-card:hover { border-color: var(--primary-200); box-shadow: var(--shadow-sm); }
+  .am-path-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .am-path-head b { font-size: 13px; }
+  .am-path-head .tag { margin-left: auto; }
+  .am-path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .am-node { padding: 4px 10px; border-radius: 999px; background: var(--primary-lighter); color: var(--primary); font-size: 12px; font-weight: 500; }
+  .am-rel { font-size: 11.5px; color: var(--text-tertiary); }
+  .am-path-meta { margin-top: 8px; font-size: 11.5px; color: var(--text-tertiary); display: flex; gap: 14px; flex-wrap: wrap; }
+  .am-path-meta button { margin-left: auto; }
+  .am-kv { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 6px 10px; font-size: 12.5px; padding: 0 18px 14px; }
+  .am-kv .k { color: var(--text-tertiary); }
+  .am-kv .v { color: var(--text-secondary); }
+  .am-bars { display: flex; flex-direction: column; gap: 10px; padding: 0 18px 14px; }
+  .am-bar-row { display: grid; grid-template-columns: 132px minmax(0, 1fr) 48px; gap: 9px; align-items: center; font-size: 12px; }
+  .am-bar-row > span { color: var(--text-secondary); }
+  .am-bar-row > b { text-align: right; font-size: 12px; }
+  .am-bar-track { height: 7px; background: var(--bg-disabled); border-radius: 999px; overflow: hidden; }
+  .am-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#2B7FFF,#6BA6FF); }
+  .am-bar-fill.green { background: linear-gradient(90deg,#00B42A,#4ECB73); }
+  .am-bar-fill.orange { background: linear-gradient(90deg,#FF7D00,#FFB84D); }
+  .am-bar-fill.violet { background: linear-gradient(90deg,#722ED1,#A875F0); }
+  .am-bar-fill.cyan { background: linear-gradient(90deg,#0FC6C2,#6EE7E4); }
+  .am-suggest { display: flex; flex-direction: column; gap: 8px; padding: 0 18px 14px; }
+  .am-suggest-item { border-left: 3px solid var(--primary); background: var(--bg-page); border-radius: 0 7px 7px 0; padding: 8px 10px; font-size: 12px; }
+  .am-suggest-item b { display: block; margin-bottom: 2px; font-size: 12.5px; }
+  .am-suggest-item span { color: var(--text-tertiary); line-height: 1.55; }
+  .am-suggest-item.warn { border-left-color: var(--warning); }
+  .am-suggest-item.bad { border-left-color: var(--error); }
+  .am-modal-table td, .am-modal-table th { font-size: 12px; }
+  .am-modal-table .tag { white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">◈</div>
+      <div class="sidebar-title">复旦大学上海医学院<br>样本库质量管理智能体平台</div>
+      <div class="sidebar-collapse-btn">⤢</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" href="http://192.168.77.144:20080/package1/chat"><span class="icon">◉</span>AI智能问答</a>
+      <a class="sidebar-item" href="knowledge-base.html"><span class="icon">⚡</span>知识库</a>
+      <a class="sidebar-item" href="knowledge-graph.html"><span class="icon">◇</span>知识图谱</a>
+      <a class="sidebar-item active" href="association-mining.html"><span class="icon">🕸</span>关联挖掘</a>
+      <!-- 智能分析：按需求去掉（2026-09-23）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
+      <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">⚙</span>智能分析</a> -->
+
+      <!-- ========== 迎检模块 · 三级菜单（2026-09-23 重构） ==========
+           一级「CNAS 迎检认可」是行式菜单，点击折叠整个模块；
+           二级＝迎检总览 + 四个分组头（同一视觉层级）；三级＝各分组子页。
+           分组顺序即业务流程：筹备 → 条款 → 材料 → 档案。
+           缩进与引导线由 styles.css 的 .sidebar-level1 / .sidebar-l2 /
+           .sidebar-l3 表达（12 → 26 → 44px），不靠 DOM 嵌套深度。
+           折叠态由 app.js 以 class "collapsed" 加在被折叠块的父级上：
+           一级加在 .sidebar-module，二级分组加在 .sidebar-group。 -->
+      <div class="sidebar-module">
+        <div class="sidebar-level1">
+          <span class="icon">🏛</span>
+          <span>CNAS 迎检认可</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sidebar-module-body">
+          <a class="sidebar-item sidebar-l2" href="review-list.html"><span class="icon">📋</span>评审列表</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="../index.html"><span class="icon">⌂</span>迎检总览</a>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📋</span>
+              <span>迎检筹备</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="task-config.html"><span class="icon">⊕</span>任务分配</a>
+              <a class="sidebar-item sidebar-l3" href="checklist.html"><span class="icon">✓</span>检查清单</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📚</span>
+              <span>条款管理</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="clause-library.html"><span class="icon">≡</span>CNAS 条款库</a>
+              <a class="sidebar-item sidebar-l3" href="self-assessment.html"><span class="icon">☐</span>条款自评</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">🗂️</span>
+              <span>证据材料中心</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="archive.html"><span class="icon">📁</span>材料智能归档</a>
+              <a class="sidebar-item sidebar-l3" href="version.html"><span class="icon">↻</span>版本管理</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📜</span>
+              <span>评审档案</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="report.html"><span class="icon">▤</span>智能报告</a>
+              <a class="sidebar-item sidebar-l3" href="history.html"><span class="icon">⏱</span>历史评审记录</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 平台级模块：迎检模块之后 -->
+      <a class="sidebar-item" href="rule-library.html"><span class="icon">📘</span>规则库</a>
+      <a class="sidebar-item" href="event-control.html"><span class="icon">🧭</span>事件管控中心</a>
+      <a class="sidebar-item" href="data-quality.html"><span class="icon">📊</span>样本数据质控</a>
+      <!-- 任务管理：按需求隐藏（2026-09-22）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
+      <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">▦</span>任务管理</a> -->
+
+      <!-- ========== 系统管理 · 二级菜单（2026-09-24 新增） ==========
+           一级「系统管理」可折叠；二级＝用户管理 / 角色管理 / 操作日志。
+           RBAC 模型里对应第 9 个功能模块（权限粒度到功能模块）。 -->
+      <div class="sidebar-module">
+        <div class="sidebar-level1">
+          <span class="icon">⚙</span>
+          <span>系统管理</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sidebar-module-body">
+          <a class="sidebar-item sidebar-l2 root-item" href="system-users.html"><span class="icon">◎</span>用户管理</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="system-roles.html"><span class="icon">🛡</span>角色管理</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="system-audit.html"><span class="icon">🔍</span>操作日志</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">
+        <span>平台级模块</span><span class="sep">/</span>
+        <span class="current">关联挖掘</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-icon-btn">🔍</div><div class="topbar-icon-btn">🔔</div>
+        <div class="user-chip"><div class="user-avatar">质</div><span>质量管理员</span></div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">关联挖掘</div>
+          <div class="page-desc">关系发现 · 路径分析 · 相似实体 · 共现分析 · 知识推理</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn" id="am-export">⬇ 导出结果</button>
+          <button class="btn btn-primary" id="am-run-all">▶ 运行关联挖掘</button>
+        </div>
+      </div>
+
+      <div class="am-stats">
+        <div class="am-stat"><span>发现关系</span><b>1,286</b><small>其中高置信 342 条</small></div>
+        <div class="am-stat"><span>相似实体对</span><b>86</b><small>相似度 ≥ 0.80</small></div>
+        <div class="am-stat"><span>共现关系</span><b>2,048</b><small>近 30 天新增 126</small></div>
+        <div class="am-stat"><span>推理结论</span><b>54</b><small>待确认 18 · 已采纳 36</small></div>
+      </div>
+
+      <div class="card">
+        <div class="tabs" id="am-tabs">
+          <div class="tab active" data-am-tab="discover">关系发现</div>
+          <div class="tab" data-am-tab="path">路径分析</div>
+          <div class="tab" data-am-tab="similar">相似实体</div>
+          <div class="tab" data-am-tab="cooccur">共现分析</div>
+          <div class="tab" data-am-tab="reason">知识推理</div>
+        </div>
+
+        <div class="am-panel active" data-am-pane="discover">
+          <div class="am-grid">
+            <div class="am-card card" style="padding:0; overflow:hidden;">
+              <div class="card-header" style="padding:16px 18px 0;">
+                <div class="card-title">🕸️ 关系发现结果 <span class="tag tag-primary">1,286 条</span></div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-sm" id="am-discover-run">运行关系发现</button>
+                  <button class="btn btn-sm btn-primary" id="am-discover-accept">批量采纳</button>
+                </div>
+              </div>
+              <div style="padding:8px 18px 0; font-size:12px; color:var(--text-tertiary);" id="am-discover-time">最近运行：2026-11-03 09:20</div>
+              <div class="table-wrap" style="border:none; border-radius:0; margin-top:10px;">
+                <table class="table am-table">
+                  <thead><tr><th>源实体</th><th style="width:86px;">关系</th><th>目标实体</th><th style="width:82px;">置信度</th><th style="width:96px;">证据</th><th style="width:82px;">状态</th><th class="col-actions" style="width:112px;">操作</th></tr></thead>
+                  <tbody id="am-discover-body">
+                    <tr><td><strong>2 型糖尿病</strong></td><td><span class="tag tag-primary">关联</span></td><td>胰岛素抵抗</td><td>0.93</td><td>3 条证据</td><td><span class="tag tag-warning" data-am-status>待确认</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>忽略</button></td></tr>
+                    <tr><td><strong>样本 S-20241201-042</strong></td><td><span class="tag tag-primary">来源于</span></td><td>供者 D-00128</td><td>0.96</td><td>5 条证据</td><td><span class="tag tag-success" data-am-status>已采纳</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>忽略</button></td></tr>
+                    <tr><td><strong>质量手册</strong></td><td><span class="tag tag-primary">引用</span></td><td>GB/T 37864 7.8 条款</td><td>0.91</td><td>2 条证据</td><td><span class="tag tag-warning" data-am-status>待确认</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>忽略</button></td></tr>
+                    <tr><td><strong>肺癌</strong></td><td><span class="tag tag-primary">关联</span></td><td>EGFR 基因</td><td>0.89</td><td>4 条证据</td><td><span class="tag tag-warning" data-am-status>待确认</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>忽略</button></td></tr>
+                    <tr><td><strong>设备 ULT-03</strong></td><td><span class="tag tag-primary">质控于</span></td><td>样本批次 B-20241128</td><td>0.87</td><td>3 条证据</td><td><span class="tag tag-success" data-am-status>已采纳</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>忽略</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">挖掘配置</div><span class="tag tag-default">规则 + 图谱</span></div>
+              <div class="am-kv">
+                <span class="k">数据范围</span><span class="v">知识图谱 3 个库 · 89 份文档</span>
+                <span class="k">关系类型</span><span class="v">临床关联 / 样本来源 / 文件引用</span>
+                <span class="k">置信阈值</span><span class="v">≥ 0.85</span>
+                <span class="k">支持度</span><span class="v">≥ 0.20</span>
+                <span class="k">运行方式</span><span class="v">增量挖掘 + 人工复核</span>
+              </div>
+              <div class="card-header" style="margin-top:4px;"><div class="card-title">证据来源</div></div>
+              <div class="am-suggest">
+                <div class="am-suggest-item"><b>样本与供者</b><span>来源：样本库 / 知情同意 / 采集记录</span></div>
+                <div class="am-suggest-item"><b>临床实体关联</b><span>来源：临床知识图谱 / 文献 / 规则库</span></div>
+                <div class="am-suggest-item warn"><b>质量文件引用</b><span>来源：知识库 / CNAS 条款 / 质量手册</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="am-panel" data-am-pane="path">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🧭 路径分析</div><span class="tag tag-primary">支持 1–4 跳</span></div>
+            <div class="am-form">
+              <label>起点</label><select class="select" id="am-path-start"><option>2 型糖尿病</option><option>样本 S-20241201-042</option><option>质量手册</option></select>
+              <label>终点</label><select class="select" id="am-path-end"><option>胰岛素抵抗</option><option>EGFR 基因</option><option>样本批次 B-20241128</option></select>
+              <label>关系类型</label><select class="select"><option>全部关系</option><option>临床关联</option><option>样本来源</option><option>质量引用</option></select>
+              <button class="btn btn-primary btn-sm" id="am-path-run">查找路径</button>
+            </div>
+            <div style="padding:0 18px 16px;" id="am-path-list">
+              <div class="am-path-card"><div class="am-path-head"><b>路径 1</b><span class="tag tag-success">2 跳 · 置信度 0.91</span></div><div class="am-path"><span class="am-node">2 型糖尿病</span><span class="am-rel">—关联→</span><span class="am-node">胰岛素抵抗</span><span class="am-rel">—影响→</span><span class="am-node">血糖控制</span></div><div class="am-path-meta"><span>证据 3 条</span><span>关系权重 0.88</span><span>来源：临床知识图谱</span><button class="btn-text" data-am-path-detail="路径 1">查看证据</button></div></div>
+              <div class="am-path-card"><div class="am-path-head"><b>路径 2</b><span class="tag tag-warning">2 跳 · 置信度 0.88</span></div><div class="am-path"><span class="am-node">2 型糖尿病</span><span class="am-rel">—关联→</span><span class="am-node">肥胖</span><span class="am-rel">—导致→</span><span class="am-node">胰岛素抵抗</span></div><div class="am-path-meta"><span>证据 2 条</span><span>关系权重 0.84</span><span>来源：临床知识图谱</span><button class="btn-text" data-am-path-detail="路径 2">查看证据</button></div></div>
+              <div class="am-path-card"><div class="am-path-head"><b>路径 3</b><span class="tag tag-warning">2 跳 · 置信度 0.86</span></div><div class="am-path"><span class="am-node">2 型糖尿病</span><span class="am-rel">—治疗→</span><span class="am-node">二甲双胍</span><span class="am-rel">—改善→</span><span class="am-node">胰岛素抵抗</span></div><div class="am-path-meta"><span>证据 4 条</span><span>关系权重 0.81</span><span>来源：临床知识图谱</span><button class="btn-text" data-am-path-detail="路径 3">查看证据</button></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="am-panel" data-am-pane="similar">
+          <div class="am-grid">
+            <div class="am-card card" style="padding:0; overflow:hidden;">
+              <div class="card-header" style="padding:16px 18px 0;"><div class="card-title">🧬 相似实体</div><div style="display:flex; gap:8px;"><button class="btn btn-sm" id="am-sim-run">计算相似实体</button><span class="tag tag-primary">86 对</span></div></div>
+              <div class="table-wrap" style="border:none; border-radius:0; margin-top:10px;">
+                <table class="table am-table">
+                  <thead><tr><th>实体 A</th><th>实体 B</th><th style="width:80px;">相似度</th><th style="width:96px;">共同邻居</th><th>关键共同属性</th><th class="col-actions" style="width:82px;">操作</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>2 型糖尿病</strong></td><td>1 型糖尿病</td><td><span class="tag tag-success">0.86</span></td><td>12 个</td><td>血糖异常、胰岛素治疗、代谢紊乱</td><td class="col-actions"><button class="btn-text" data-am-compare="0">对比</button></td></tr>
+                    <tr><td><strong>样本 S-001</strong></td><td>样本 S-013</td><td><span class="tag tag-success">0.92</span></td><td>8 个</td><td>血清、-80℃、知情同意齐全</td><td class="col-actions"><button class="btn-text" data-am-compare="1">对比</button></td></tr>
+                    <tr><td><strong>质量手册 v2.3</strong></td><td>质量手册 v2.4</td><td><span class="tag tag-success">0.95</span></td><td>6 个</td><td>条款引用、审批状态、责任部门</td><td class="col-actions"><button class="btn-text" data-am-compare="2">对比</button></td></tr>
+                    <tr><td><strong>设备 ULT-03</strong></td><td>设备 ULT-04</td><td><span class="tag tag-warning">0.81</span></td><td>5 个</td><td>-80℃、校准周期、存储区域</td><td class="col-actions"><button class="btn-text" data-am-compare="3">对比</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">相似度说明</div><span class="tag tag-default">图嵌入 + 属性</span></div>
+              <div class="am-kv">
+                <span class="k">计算方法</span><span class="v">图嵌入余弦相似度 + 属性匹配</span>
+                <span class="k">共同邻居</span><span class="v">图谱中共享的直接邻居数</span>
+                <span class="k">阈值</span><span class="v">≥ 0.80 进入候选列表</span>
+                <span class="k">应用</span><span class="v">实体对齐 / 去重 / 合并建议</span>
+              </div>
+              <div class="am-bars">
+                <div class="am-bar-row"><span>糖尿病实体</span><div class="am-bar-track"><div class="am-bar-fill" style="width:86%"></div></div><b>0.86</b></div>
+                <div class="am-bar-row"><span>样本实体</span><div class="am-bar-track"><div class="am-bar-fill green" style="width:92%"></div></div><b>0.92</b></div>
+                <div class="am-bar-row"><span>文件版本</span><div class="am-bar-track"><div class="am-bar-fill orange" style="width:95%"></div></div><b>0.95</b></div>
+                <div class="am-bar-row"><span>设备实体</span><div class="am-bar-track"><div class="am-bar-fill violet" style="width:81%"></div></div><b>0.81</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="am-panel" data-am-pane="cooccur">
+          <div class="am-grid">
+            <div class="am-card card" style="padding:0; overflow:hidden;">
+              <div class="card-header" style="padding:16px 18px 0;"><div class="card-title">🔗 共现分析</div><div style="display:flex; gap:8px;"><button class="btn btn-sm" id="am-co-run">运行共现分析</button><span class="tag tag-primary">近 30 天</span></div></div>
+              <div class="table-wrap" style="border:none; border-radius:0; margin-top:10px;">
+                <table class="table am-table">
+                  <thead><tr><th>共现对</th><th style="width:96px;">共现次数</th><th style="width:80px;">支持度</th><th style="width:80px;">提升度</th><th style="width:82px;">趋势</th><th>共现强度</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>疾病 × 症状</strong></td><td>8,642</td><td>0.82</td><td>1.46</td><td><span class="tag tag-success">上升</span></td><td><div class="am-bar-track"><div class="am-bar-fill" style="width:100%"></div></div></td></tr>
+                    <tr><td><strong>样本 × 设备</strong></td><td>6,420</td><td>0.78</td><td>1.32</td><td><span class="tag tag-default">稳定</span></td><td><div class="am-bar-track"><div class="am-bar-fill green" style="width:74%"></div></div></td></tr>
+                    <tr><td><strong>文件 × 条款</strong></td><td>5,980</td><td>0.74</td><td>1.28</td><td><span class="tag tag-success">上升</span></td><td><div class="am-bar-track"><div class="am-bar-fill orange" style="width:69%"></div></div></td></tr>
+                    <tr><td><strong>药物 × 基因</strong></td><td>4,320</td><td>0.69</td><td>1.18</td><td><span class="tag tag-default">稳定</span></td><td><div class="am-bar-track"><div class="am-bar-fill violet" style="width:50%"></div></div></td></tr>
+                    <tr><td><strong>供者 × 样本</strong></td><td>3,860</td><td>0.66</td><td>1.12</td><td><span class="tag tag-warning">下降</span></td><td><div class="am-bar-track"><div class="am-bar-fill cyan" style="width:45%"></div></div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">共现洞察</div><span class="tag tag-default">Top 5</span></div>
+              <div class="am-suggest">
+                <div class="am-suggest-item"><b>疾病 × 症状</b><span>共现最强，建议用于临床知识图谱实体对齐与症状归一化。</span></div>
+                <div class="am-suggest-item"><b>样本 × 设备</b><span>设备与样本批次共现显著，可辅助定位质控异常来源。</span></div>
+                <div class="am-suggest-item warn"><b>文件 × 条款</b><span>质量文件与条款共现稳定，建议补充未关联条款。</span></div>
+                <div class="am-suggest-item"><b>供者 × 样本</b><span>共现下降，可能存在供者信息缺失或样本关联不完整。</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="am-panel" data-am-pane="reason">
+          <div class="am-grid">
+            <div class="am-card card" style="padding:0; overflow:hidden;">
+              <div class="card-header" style="padding:16px 18px 0;"><div class="card-title">🧠 知识推理</div><div style="display:flex; gap:8px;"><button class="btn btn-sm" id="am-reason-run">运行知识推理</button><span class="tag tag-primary">54 条结论</span></div></div>
+              <div class="table-wrap" style="border:none; border-radius:0; margin-top:10px;">
+                <table class="table am-table">
+                  <thead><tr><th>前提</th><th style="width:72px;">规则</th><th>推理结论</th><th style="width:74px;">置信度</th><th style="width:82px;">状态</th><th class="col-actions" style="width:112px;">操作</th></tr></thead>
+                  <tbody>
+                    <tr><td>样本 S-20241128-013 温度 -58.2℃ / ULT-03 校准逾期</td><td><span class="tag tag-default">R-07</span></td><td>该批次质量风险升高，建议暂停分发</td><td>0.92</td><td><span class="tag tag-warning" data-am-status>待确认</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>驳回</button></td></tr>
+                    <tr><td>2 型糖尿病 / 胰岛素抵抗</td><td><span class="tag tag-default">R-12</span></td><td>建议纳入代谢综合征研究队列</td><td>0.88</td><td><span class="tag tag-warning" data-am-status>待确认</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>驳回</button></td></tr>
+                    <tr><td>文件版本冲突 / 未审批</td><td><span class="tag tag-default">R-03</span></td><td>文件不得发布，需先完成审批</td><td>0.95</td><td><span class="tag tag-success" data-am-status>已采纳</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>驳回</button></td></tr>
+                    <tr><td>知情同意缺失 / 样本已入库</td><td><span class="tag tag-default">R-09</span></td><td>冻结出库权限并生成整改任务</td><td>0.93</td><td><span class="tag tag-warning" data-am-status>待确认</span></td><td class="col-actions"><button class="btn-text" data-am-accept>采纳</button><button class="btn-text" data-am-ignore>驳回</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">推理规则</div><span class="tag tag-default">可解释</span></div>
+              <div class="am-suggest">
+                <div class="am-suggest-item bad"><b>R-07 设备异常 → 批次风险</b><span>温度偏离 + 设备校准逾期 → 受影响批次质量风险升高。</span></div>
+                <div class="am-suggest-item"><b>R-12 疾病关联 → 研究队列</b><span>疾病与关键表型关联 → 推荐纳入相关研究队列。</span></div>
+                <div class="am-suggest-item warn"><b>R-03 文件控制 → 禁止发布</b><span>版本冲突或未审批 → 文件不得发布。</span></div>
+                <div class="am-suggest-item"><b>R-09 知情同意 → 冻结出库</b><span>伦理材料缺失 → 冻结样本出库权限。</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="am-modal">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="am-modal-title">
+    <div class="modal-header">
+      <div class="modal-title" id="am-modal-title">相似实体对比</div>
+      <button class="modal-close" type="button" data-am-close aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body" id="am-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn" type="button" data-am-close>关闭</button>
+      <button class="btn btn-primary" type="button" id="am-modal-ok">生成合并建议</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/roles.js"></script>
+<script src="../assets/task-store.js"></script>
+<script src="../assets/review-store.js"></script>
+<script src="../assets/reminder-store.js"></script>
+<script src="../assets/app.js"></script>
+<script src="../assets/role-guard.js"></script>
+<script src="../assets/agent-widget.js"></script>
+<script>
+(function () {
+  'use strict';
+  function $(s) { return document.querySelector(s); }
+  function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  function toast(msg, type) { if (window.showToast) window.showToast(msg, type || 'success'); }
+
+  document.getElementById('am-tabs').addEventListener('click', function (e) {
+    var tab = e.target.closest('[data-am-tab]');
+    if (!tab) return;
+    $$('#am-tabs .tab').forEach(function (t) { t.classList.toggle('active', t === tab); });
+    var name = tab.getAttribute('data-am-tab');
+    $$('.am-panel').forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-am-pane') === name); });
+  });
+
+  function setStatus(row, text, cls) {
+    var tag = row.querySelector('[data-am-status]');
+    if (!tag) return;
+    tag.className = 'tag ' + cls;
+    tag.textContent = text;
+  }
+
+  document.getElementById('am-discover-body').addEventListener('click', function (e) {
+    var row = e.target.closest('tr');
+    if (!row) return;
+    if (e.target.closest('[data-am-accept]')) { setStatus(row, '已采纳', 'tag-success'); toast('已采纳该关系，写入知识图谱'); }
+    if (e.target.closest('[data-am-ignore]')) { setStatus(row, '已忽略', 'tag-default'); toast('已忽略该关系', 'info'); }
+  });
+
+  document.getElementById('am-discover-run').addEventListener('click', function () {
+    document.getElementById('am-discover-time').textContent = '最近运行：' + new Date().toLocaleString('zh-CN', { hour12: false });
+    toast('关系发现完成：扫描 3 个图谱库，新增候选关系 18 条', 'success');
+  });
+  document.getElementById('am-discover-accept').addEventListener('click', function () {
+    $$('#am-discover-body tr').forEach(function (row) { setStatus(row, '已采纳', 'tag-success'); });
+    toast('已批量采纳当前候选关系，写入图谱', 'success');
+  });
+
+  document.getElementById('am-path-run').addEventListener('click', function () {
+    toast('路径分析完成：找到 3 条 2 跳路径，已按置信度排序', 'success');
+  });
+  document.querySelector('[data-am-pane="path"]').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-am-path-detail]');
+    if (b) toast('已查看「' + b.getAttribute('data-am-path-detail') + '」的证据链', 'success');
+  });
+
+  document.getElementById('am-sim-run').addEventListener('click', function () {
+    toast('相似实体计算完成：新增候选 6 对，阈值 0.80', 'success');
+  });
+  document.getElementById('am-co-run').addEventListener('click', function () {
+    toast('共现分析完成：更新 5 组高频共现对', 'success');
+  });
+  document.getElementById('am-reason-run').addEventListener('click', function () {
+    toast('知识推理完成：新增推理结论 4 条，待人工确认', 'success');
+  });
+  document.querySelector('[data-am-pane="reason"]').addEventListener('click', function (e) {
+    var row = e.target.closest('tr');
+    if (!row) return;
+    if (e.target.closest('[data-am-accept]')) { setStatus(row, '已采纳', 'tag-success'); toast('推理结论已采纳'); }
+    if (e.target.closest('[data-am-ignore]')) { setStatus(row, '已驳回', 'tag-default'); toast('推理结论已驳回', 'info'); }
+  });
+
+  var COMPARE = [
+    { title: '2 型糖尿病 vs 1 型糖尿病', a: '2 型糖尿病', b: '1 型糖尿病', sim: '0.86', rows: [['疾病分类', '代谢性疾病', '自身免疫性疾病', '差异'], ['核心症状', '多饮多尿、体重下降', '多饮多尿、酮症倾向', '部分一致'], ['治疗方式', '口服药 / 胰岛素', '胰岛素为主', '部分一致'], ['共同邻居', '胰岛素抵抗、血糖控制', '胰岛素抵抗、C 肽', '部分一致']] },
+    { title: '样本 S-001 vs S-013', a: 'S-001', b: 'S-013', sim: '0.92', rows: [['样本类型', '血清', '血清', '一致'], ['储存温度', '-80℃', '-80℃', '一致'], ['知情同意', '齐全', '齐全', '一致'], ['采集日期', '2026-04-03', '2026-04-27', '差异']] },
+    { title: '质量手册 v2.3 vs v2.4', a: 'v2.3', b: 'v2.4', sim: '0.95', rows: [['条款引用', 'GB/T 37864 7.8', 'GB/T 37864 7.8', '一致'], ['审批状态', '已批准', '已批准', '一致'], ['责任部门', '质量管理部', '质量管理部', '一致'], ['版本差异', '缺少 7.8.2', '补充 7.8.2', '差异']] },
+    { title: '设备 ULT-03 vs ULT-04', a: 'ULT-03', b: 'ULT-04', sim: '0.81', rows: [['设备类型', '-80℃ 超低温冰箱', '-80℃ 超低温冰箱', '一致'], ['校准周期', '12 个月', '12 个月', '一致'], ['存放区域', 'B 库 / 02 架', 'B 库 / 03 架', '差异'], ['当前状态', '校准逾期', '正常', '差异']] }
+  ];
+
+  function openCompare(i) {
+    var d = COMPARE[i];
+    if (!d) return;
+    $('#am-modal-title').textContent = d.title;
+    $('#am-modal-body').innerHTML = '<div class="pm-banner" style="background:var(--primary-50);border-color:var(--primary-100);color:var(--primary-dark);"><span class="pm-banner-ico">🔎</span><div><strong>相似度 ' + d.sim + '</strong> · 基于图嵌入与共同属性计算，以下为关键属性对比。</div></div>' +
+      '<div class="table-wrap"><table class="table am-modal-table"><thead><tr><th>属性</th><th>' + d.a + '</th><th>' + d.b + '</th><th style="width:92px;">是否一致</th></tr></thead><tbody>' +
+      d.rows.map(function (r) { return '<tr><td><strong>' + r[0] + '</strong></td><td>' + r[1] + '</td><td>' + r[2] + '</td><td><span class="tag ' + (r[3] === '一致' ? 'tag-success' : 'tag-warning') + '">' + r[3] + '</span></td></tr>'; }).join('') +
+      '</tbody></table></div>';
+    $('#am-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    $('#am-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  $$('[data-am-compare]').forEach(function (b) {
+    b.addEventListener('click', function () { openCompare(+b.getAttribute('data-am-compare')); });
+  });
+  $$('[data-am-close]').forEach(function (b) { b.addEventListener('click', closeModal); });
+  $('#am-modal').addEventListener('click', function (e) { if (e.target === $('#am-modal')) closeModal(); });
+  $('#am-modal-ok').addEventListener('click', function () { closeModal(); toast('已生成实体合并建议，提交人工复核', 'success'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+  document.getElementById('am-export').addEventListener('click', function () { toast('已导出关联挖掘结果（CSV）', 'success'); });
+  document.getElementById('am-run-all').addEventListener('click', function () { toast('已启动全量关联挖掘：关系发现 / 路径 / 相似实体 / 共现 / 推理', 'success'); });
+})();
+</script>
+</body>
+</html>

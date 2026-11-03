@@ -154,6 +154,39 @@
     .kb-flow { grid-template-columns: 1fr; }
     .kb-doc-actions { margin-left: 0; width: 100%; }
   }
+  .kb-parse-steps { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .kb-parse-step { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border-light); border-radius: 999px; background: var(--bg-page); font-size: 12px; color: var(--text-tertiary); }
+  .kb-parse-step b { color: var(--text-secondary); font-weight: 600; }
+  .kb-parse-step.on { border-color: var(--primary-200); background: var(--primary-50); color: var(--primary); }
+  .kb-parse-step.on b { color: var(--primary); }
+  .kb-parse-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .kb-parse-grid { grid-template-columns: 1fr; } }
+  .kb-drop { border: 1.5px dashed var(--border); border-radius: 10px; padding: 18px 14px; text-align: center; background: var(--bg-page); cursor: pointer; transition: border-color .15s, background .15s; }
+  .kb-drop:hover { border-color: var(--primary); background: var(--primary-lighter); }
+  .kb-drop .ico { font-size: 28px; margin-bottom: 6px; }
+  .kb-drop b { display: block; font-size: 13px; color: var(--text-primary); }
+  .kb-drop span { display: block; font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; line-height: 1.6; }
+  .kb-file-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 8px; margin-top: 8px; background: #fff; font-size: 12.5px; }
+  .kb-file-item .f-ico { width: 28px; height: 28px; border-radius: 7px; background: var(--primary-lighter); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .kb-file-item b { display: block; font-weight: 500; color: var(--text-primary); }
+  .kb-file-item span { font-size: 11.5px; color: var(--text-tertiary); }
+  .kb-file-item .tag { margin-left: auto; }
+  .kb-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .kb-setting label { display: block; font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .kb-setting select, .kb-setting input { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 9px; background: #fff; font-size: 12.5px; color: var(--text-primary); }
+  .kb-progress-title { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .kb-step-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .kb-step-row { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--border-light); border-radius: 7px; background: #fff; font-size: 12.5px; }
+  .kb-step-row .num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-disabled); color: var(--text-tertiary); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .kb-step-row b { display: block; font-weight: 500; color: var(--text-primary); }
+  .kb-step-row small { display: block; font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+  .kb-step-row .tag { margin-left: auto; flex-shrink: 0; }
+  .kb-step-row.active { border-color: var(--primary-200); background: var(--primary-50); }
+  .kb-step-row.active .num { background: var(--primary); color: #fff; }
+  .kb-step-row.done .num { background: var(--success); color: #fff; }
+  .kb-parse-result { margin-top: 14px; padding: 12px; border: 1px solid #B8F0C2; border-radius: 8px; background: var(--success-bg); font-size: 12.5px; color: #00892A; line-height: 1.7; }
+  .kb-parse-result b { color: #006B20; }
+  .kb-parse-sim { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #B8F0C2; color: var(--text-secondary); }
 </style>
 </head>
 <body data-no-review-bar="1">
@@ -168,6 +201,7 @@
       <a class="sidebar-item" href="http://192.168.77.144:20080/package1/chat"><span class="icon">◉</span>AI智能问答</a>
       <a class="sidebar-item active" href="knowledge-base.html"><span class="icon">⚡</span>知识库</a>
       <a class="sidebar-item" href="knowledge-graph.html"><span class="icon">◇</span>知识图谱</a>
+      <a class="sidebar-item" href="association-mining.html"><span class="icon">🕸</span>关联挖掘</a>
       <!-- 智能分析：按需求去掉（2026-09-23）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
       <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">⚙</span>智能分析</a> -->
 
@@ -407,7 +441,7 @@
             </div>
             <div class="kb-doc-actions">
               <button class="btn btn-primary" data-kb-toast="命中测试：输入检索片段后返回命中文档、条款与相似度">◎ 命中测试</button>
-              <button class="btn" data-kb-toast="添加文档：支持 PDF / Word / Excel / 图片批量上传">＋ 添加文档</button>
+              <button class="btn" id="kb-add-doc">＋ 添加文档</button>
               <button class="btn" data-kb-toast="添加子目录：请输入目录名称与分类">＋ 添加子目录</button>
               <button class="btn btn-danger" data-kb-toast="请先勾选需要删除的文件或目录">🗑 删除</button>
             </div>
@@ -685,6 +719,67 @@
       <span class="kb-modal-footer-note" id="kb-life-foot"></span>
       <button class="btn" type="button" data-kb-close>关闭</button>
       <button class="btn btn-primary" type="button" id="kb-life-action"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="kb-parse-modal">
+  <div class="modal modal-xl" role="dialog" aria-modal="true" aria-labelledby="kb-parse-title">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="kb-parse-title">文档解析与向量化</div>
+        <div class="modal-subtitle">支持多格式文件向量化处理：切片 · 嵌入 · 索引 · 更新 · 相似度计算</div>
+      </div>
+      <button class="modal-close" type="button" data-kb-parse-close aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="kb-parse-steps">
+        <span class="kb-parse-step on"><b>1</b> 文件解析</span>
+        <span class="kb-parse-step"><b>2</b> 文本切片</span>
+        <span class="kb-parse-step"><b>3</b> 向量嵌入</span>
+        <span class="kb-parse-step"><b>4</b> 索引构建</span>
+        <span class="kb-parse-step"><b>5</b> 索引更新</span>
+        <span class="kb-parse-step"><b>6</b> 相似度计算</span>
+      </div>
+      <div class="kb-parse-grid">
+        <div>
+          <div class="kb-drop" id="kb-drop">
+            <div class="ico">📄</div>
+            <b>点击选择文件或拖拽到此处</b>
+            <span>支持 PDF / Word / Excel / PPT / 图片 / TXT / MD<br>单文件 ≤ 200MB，支持批量上传与 OCR</span>
+          </div>
+          <div id="kb-file-list"></div>
+          <div class="kb-settings">
+            <div class="kb-setting"><label>切片长度</label><select id="kb-chunk"><option>512 tokens</option><option>256 tokens</option><option>1024 tokens</option></select></div>
+            <div class="kb-setting"><label>重叠长度</label><select id="kb-overlap"><option>64 tokens</option><option>32 tokens</option><option>128 tokens</option></select></div>
+            <div class="kb-setting"><label>向量模型</label><select id="kb-model"><option>text-embedding-3-large</option><option>bge-m3</option><option>text2vec-large</option></select></div>
+            <div class="kb-setting"><label>向量维度</label><select id="kb-dim"><option>1,536</option><option>1,024</option><option>768</option></select></div>
+            <div class="kb-setting"><label>索引类型</label><select id="kb-index"><option>HNSW</option><option>IVF-Flat</option><option>Flat</option></select></div>
+            <div class="kb-setting"><label>更新策略</label><select id="kb-update"><option>增量更新</option><option>全量重建</option></select></div>
+            <div class="kb-setting"><label>相似度度量</label><select id="kb-metric"><option>余弦相似度</option><option>内积</option><option>欧氏距离</option></select></div>
+            <div class="kb-setting"><label>TopK 召回</label><select id="kb-topk"><option>5</option><option>10</option><option>20</option></select></div>
+          </div>
+        </div>
+        <div>
+          <div class="kb-progress-title"><span>处理进度</span><span id="kb-parse-pct" style="font-size:12px; color:var(--text-tertiary);">0%</span></div>
+          <div class="progress" style="height:8px;"><div class="progress-bar" id="kb-parse-bar" style="width:0%"></div></div>
+          <div class="kb-step-list" id="kb-step-list">
+            <div class="kb-step-row" data-parse-step="0"><span class="num">1</span><div><b>文件解析</b><small>PDF / Word / Excel / 图片 OCR</small></div><span class="tag tag-default">待执行</span></div>
+            <div class="kb-step-row" data-parse-step="1"><span class="num">2</span><div><b>文本切片</b><small>按语义与长度切分，保留重叠上下文</small></div><span class="tag tag-default">待执行</span></div>
+            <div class="kb-step-row" data-parse-step="2"><span class="num">3</span><div><b>向量嵌入</b><small>调用嵌入模型生成向量</small></div><span class="tag tag-default">待执行</span></div>
+            <div class="kb-step-row" data-parse-step="3"><span class="num">4</span><div><b>索引构建</b><small>HNSW 向量索引与元数据索引</small></div><span class="tag tag-default">待执行</span></div>
+            <div class="kb-step-row" data-parse-step="4"><span class="num">5</span><div><b>索引更新</b><small>增量写入并刷新检索缓存</small></div><span class="tag tag-default">待执行</span></div>
+            <div class="kb-step-row" data-parse-step="5"><span class="num">6</span><div><b>相似度计算</b><small>TopK 召回与相似度校验</small></div><span class="tag tag-default">待执行</span></div>
+          </div>
+          <div class="kb-parse-result" id="kb-parse-result" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span class="kb-modal-footer-note">解析结果可追溯 · 支持增量更新与相似度检索</span>
+      <button class="btn" type="button" data-kb-parse-close>关闭</button>
+      <button class="btn btn-primary" type="button" id="kb-parse-start">开始解析</button>
+      <button class="btn btn-primary" type="button" id="kb-parse-done" disabled>完成入库</button>
     </div>
   </div>
 </div>
@@ -1203,8 +1298,148 @@
     });
   }
 
+
+  var parseModal = $('#kb-parse-modal');
+  var parseTimer = null;
+  var parseStep = 0;
+  var parseFile = { name: 'GB/T 37864-2019 生物样本库质量和能力通用要求.pdf', meta: 'PDF · 3.2 MB · 156 页', demo: true };
+
+  function renderParseFile() {
+    var host = $('#kb-file-list');
+    if (!host) return;
+    host.innerHTML = '<div class="kb-file-item"><span class="f-ico">📄</span><div><b>' + parseFile.name + '</b><span>' + parseFile.meta + '</span></div><span class="tag ' + (parseFile.demo ? 'tag-default' : 'tag-primary') + '">' + (parseFile.demo ? '示例文档' : '已选择') + '</span></div>';
+  }
+
+  function setParseStep(i, state) {
+    var rows = $all('#kb-step-list .kb-step-row');
+    var row = rows[i];
+    if (!row) return;
+    row.classList.toggle('active', state === 'active');
+    row.classList.toggle('done', state === 'done');
+    var tag = row.querySelector('.tag');
+    tag.className = 'tag ' + (state === 'done' ? 'tag-success' : (state === 'active' ? 'tag-warning' : 'tag-default'));
+    tag.textContent = state === 'done' ? '完成' : (state === 'active' ? '进行中' : '待执行');
+    $all('.kb-parse-step').forEach(function (el, idx) {
+      el.classList.toggle('on', idx <= i && (state === 'active' || state === 'done'));
+    });
+  }
+
+  function resetParse() {
+    if (parseTimer) { clearInterval(parseTimer); parseTimer = null; }
+    parseStep = 0;
+    parseFile = { name: 'GB/T 37864-2019 生物样本库质量和能力通用要求.pdf', meta: 'PDF · 3.2 MB · 156 页', demo: true };
+    renderParseFile();
+    $all('#kb-step-list .kb-step-row').forEach(function (row) {
+      row.classList.remove('active', 'done');
+      var tag = row.querySelector('.tag');
+      tag.className = 'tag tag-default';
+      tag.textContent = '待执行';
+    });
+    $all('.kb-parse-step').forEach(function (el, i) { el.classList.toggle('on', i === 0); });
+    var bar = $('#kb-parse-bar'); if (bar) bar.style.width = '0%';
+    var pct = $('#kb-parse-pct'); if (pct) pct.textContent = '0%';
+    var res = $('#kb-parse-result'); if (res) { res.style.display = 'none'; res.innerHTML = ''; }
+    var start = $('#kb-parse-start'); if (start) { start.disabled = false; start.textContent = '开始解析'; }
+    var done = $('#kb-parse-done'); if (done) done.disabled = true;
+  }
+
+  function openParse() {
+    if (!parseModal) return;
+    resetParse();
+    parseModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeParse() {
+    if (parseTimer) { clearInterval(parseTimer); parseTimer = null; }
+    if (!parseModal) return;
+    parseModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  function finishParse() {
+    if (parseTimer) { clearInterval(parseTimer); parseTimer = null; }
+    setParseStep(5, 'done');
+    var bar = $('#kb-parse-bar'); if (bar) bar.style.width = '100%';
+    var pct = $('#kb-parse-pct'); if (pct) pct.textContent = '100%';
+    var model = $('#kb-model').value;
+    var dim = $('#kb-dim').value;
+    var index = $('#kb-index').value;
+    var metric = $('#kb-metric').value;
+    var topk = $('#kb-topk').value;
+    var res = $('#kb-parse-result');
+    res.style.display = '';
+    res.innerHTML = '<b>解析完成：</b>1 个文档 · 128 个切片 · ' + dim + ' 维向量 · ' + index + ' 索引 · 128 条向量已写入<br>' +
+      '嵌入模型：' + model + ' · 相似度度量：' + metric + ' · 更新策略：' + $('#kb-update').value +
+      '<div class="kb-parse-sim"><b>相似度校验（Top' + topk + '）：</b><br>1. GB/T 37864-2019 7.8.2 质量控制 — 0.92<br>2. 生物样本库质控程序 — 0.87<br>3. ISO 20387:2018 7.8 — 0.84</div>';
+    var done = $('#kb-parse-done'); if (done) done.disabled = false;
+    var start = $('#kb-parse-start'); if (start) { start.disabled = false; start.textContent = '重新解析'; }
+    window.showToast('文档解析与向量化完成，索引已更新', 'success');
+  }
+
+  function startParse() {
+    if (parseTimer) { clearInterval(parseTimer); parseTimer = null; }
+    parseStep = 0;
+    $all('#kb-step-list .kb-step-row').forEach(function (row) {
+      row.classList.remove('active', 'done');
+      var tag = row.querySelector('.tag');
+      tag.className = 'tag tag-default';
+      tag.textContent = '待执行';
+    });
+    var res = $('#kb-parse-result'); if (res) res.style.display = 'none';
+    var start = $('#kb-parse-start'); if (start) { start.disabled = true; start.textContent = '解析中…'; }
+    var done = $('#kb-parse-done'); if (done) done.disabled = true;
+    setParseStep(0, 'active');
+    var bar = $('#kb-parse-bar'); if (bar) bar.style.width = '8%';
+    var pct = $('#kb-parse-pct'); if (pct) pct.textContent = '8%';
+    parseTimer = setInterval(function () {
+      setParseStep(parseStep, 'done');
+      parseStep++;
+      if (parseStep >= 6) { finishParse(); return; }
+      setParseStep(parseStep, 'active');
+      var p = Math.round((parseStep + 1) / 6 * 100);
+      if (bar) bar.style.width = p + '%';
+      if (pct) pct.textContent = p + '%';
+    }, 650);
+  }
+
+  $('#kb-add-doc').addEventListener('click', openParse);
+  $all('[data-kb-parse-close]').forEach(function (el) { el.addEventListener('click', closeParse); });
+  if (parseModal) {
+    parseModal.addEventListener('click', function (e) { if (e.target === parseModal) closeParse(); });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && parseModal && parseModal.classList.contains('show')) closeParse();
+  });
+
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.multiple = true;
+  fileInput.style.display = 'none';
+  fileInput.setAttribute('accept', '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.txt,.md');
+  document.body.appendChild(fileInput);
+  $('#kb-drop').addEventListener('click', function () { fileInput.click(); });
+  fileInput.addEventListener('change', function () {
+    if (!fileInput.files || !fileInput.files.length) return;
+    var f = fileInput.files[0];
+    var size = f.size > 1024 * 1024 ? (f.size / 1024 / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB';
+    parseFile = { name: f.name, meta: (f.name.split('.').pop() || '文件').toUpperCase() + ' · ' + size, demo: false };
+    renderParseFile();
+    window.showToast('已选择文件：' + f.name, 'success');
+  });
+  $('#kb-parse-start').addEventListener('click', startParse);
+  $('#kb-parse-done').addEventListener('click', function () {
+    var row = document.querySelector('#kb-tbody tr[data-name="生物样本库知识库"] td:nth-child(4)');
+    if (row) row.textContent = String((parseInt(row.textContent, 10) || 89) + 1);
+    var summary = $('#kb-doc-summary');
+    if (summary) summary.textContent = '共 90 个文档 · 7 个目录';
+    closeParse();
+    window.showToast('文档已入库，切片 / 向量 / 索引已更新，相似度检索可用', 'success');
+  });
+
   function applyHash() {
     var h = (location.hash || '').replace('#', '');
+    if (h === 'parse') { openParse(); return; }
     if (LIFE[h]) { setView('lifecycle'); openLife(h); return; }
     if (['manage', 'docs', 'viz', 'lifecycle'].indexOf(h) > -1) setView(h);
   }
