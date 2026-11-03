@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" href="data:," />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>知识图谱  - 上医科研样本库信息化平台</title>
+<link rel="stylesheet" href="../assets/styles.css" />
+<link rel="stylesheet" href="../assets/agent-widget.css" />
+<link rel="stylesheet" href="../assets/platform-modules.css" />
+<style>
+  .kg-stats-card { padding: 0; overflow: hidden; }
+  .kg-stats { display: flex; flex-wrap: wrap; background: var(--bg-page); }
+  .kg-stat { flex: 1; min-width: 190px; padding: 16px 22px; border-right: 1px solid var(--border-light); }
+  .kg-stat:last-child { border-right: none; }
+  .kg-stat span { display: block; font-size: 12px; color: var(--text-tertiary); }
+  .kg-stat b { display: inline-block; margin-top: 4px; font-size: 27px; line-height: 1.2; color: var(--text-primary); }
+  .kg-stat small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--text-tertiary); }
+  .kg-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, .65fr); gap: 16px; margin-top: 16px; align-items: start; }
+  @media (max-width: 1200px) { .kg-grid { grid-template-columns: 1fr; } }
+
+  .kg-graph { height: 430px; border-radius: 8px; background: linear-gradient(180deg, #F7FAFF 0%, #EEF4FF 100%); border: 1px solid var(--border-light); overflow: hidden; position: relative; }
+  .kg-graph svg { display: block; width: 100%; height: 100%; }
+  .kg-edge { stroke: #C9D9F5; stroke-width: 1.4; }
+  .kg-node { cursor: pointer; }
+  .kg-node circle { transition: filter .15s, stroke .15s; stroke: rgba(255,255,255,.9); stroke-width: 2; }
+  .kg-node:hover circle { filter: brightness(1.08); stroke: #1D2129; }
+  .kg-node text { fill: #fff; font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+  .kg-graph-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
+  .kg-node-detail { padding: 10px 16px; border-top: 1px solid var(--border-light); background: var(--bg-page); font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+  .kg-node-detail b { color: var(--text-primary); }
+
+  .kg-bars { display: flex; flex-direction: column; gap: 11px; }
+  .kg-bar-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 48px; align-items: center; gap: 10px; font-size: 12.5px; }
+  .kg-bar-row > span { color: var(--text-secondary); }
+  .kg-bar-row > b { text-align: right; font-weight: 600; color: var(--text-primary); }
+  .kg-bar-track { height: 8px; border-radius: 999px; background: var(--bg-disabled); overflow: hidden; }
+  .kg-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #2B7FFF, #6BA6FF); }
+  .kg-bar-fill.green { background: linear-gradient(90deg, #00B42A, #4ECB73); }
+  .kg-bar-fill.orange { background: linear-gradient(90deg, #FF7D00, #FFB84D); }
+  .kg-bar-fill.violet { background: linear-gradient(90deg, #722ED1, #A875F0); }
+  .kg-bar-fill.cyan { background: linear-gradient(90deg, #0FC6C2, #6EE7E4); }
+  .kg-bar-fill.slate { background: linear-gradient(90deg, #4E5969, #86909C); }
+  .kg-table-row.active td { background: var(--primary-lighter); }
+  .kg-lib-name { display: flex; align-items: center; gap: 9px; font-weight: 500; }
+  .kg-lib-name .ico { width: 28px; height: 28px; border-radius: 7px; background: var(--primary-lighter); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; }
+  @media (max-width: 900px) { .kg-stat { flex: 1 1 50%; border-bottom: 1px solid var(--border-light); } }
+</style>
+</head>
+<body data-no-review-bar="1">
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">◈</div>
+      <div class="sidebar-title">上医科研样本库<br>信息化平台</div>
+      <div class="sidebar-collapse-btn">⤢</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" href="http://192.168.77.144:20080/package1/chat"><span class="icon">◉</span>AI智能问答</a>
+      <a class="sidebar-item" href="knowledge-base.html"><span class="icon">⚡</span>知识库</a>
+      <a class="sidebar-item active" href="knowledge-graph.html"><span class="icon">◇</span>知识图谱</a>
+      <!-- 智能分析：按需求去掉（2026-09-23）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
+      <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">⚙</span>智能分析</a> -->
+
+      <!-- ========== 迎检模块 · 三级菜单（2026-09-23 重构） ==========
+           一级「CNAS 迎检认可」是行式菜单，点击折叠整个模块；
+           二级＝迎检总览 + 四个分组头（同一视觉层级）；三级＝各分组子页。
+           分组顺序即业务流程：筹备 → 条款 → 材料 → 档案。
+           缩进与引导线由 styles.css 的 .sidebar-level1 / .sidebar-l2 /
+           .sidebar-l3 表达（12 → 26 → 44px），不靠 DOM 嵌套深度。
+           折叠态由 app.js 以 class "collapsed" 加在被折叠块的父级上：
+           一级加在 .sidebar-module，二级分组加在 .sidebar-group。 -->
+      <div class="sidebar-module">
+        <div class="sidebar-level1">
+          <span class="icon">🏛</span>
+          <span>CNAS 迎检认可</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sidebar-module-body">
+          <a class="sidebar-item sidebar-l2" href="review-list.html"><span class="icon">📋</span>评审列表</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="../index.html"><span class="icon">⌂</span>迎检总览</a>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📋</span>
+              <span>迎检筹备</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="task-config.html"><span class="icon">⊕</span>任务分配</a>
+              <a class="sidebar-item sidebar-l3" href="checklist.html"><span class="icon">✓</span>检查清单</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📚</span>
+              <span>条款管理</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="clause-library.html"><span class="icon">≡</span>CNAS 条款库</a>
+              <a class="sidebar-item sidebar-l3" href="self-assessment.html"><span class="icon">☐</span>条款自评</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">🗂️</span>
+              <span>证据材料中心</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="archive.html"><span class="icon">📁</span>材料智能归档</a>
+              <a class="sidebar-item sidebar-l3" href="version.html"><span class="icon">↻</span>版本管理</a>
+            </div>
+          </div>
+
+          <div class="sidebar-group">
+            <div class="sidebar-group-header sidebar-l2">
+              <span class="icon">📜</span>
+              <span>评审档案</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="sidebar-subgroup">
+              <a class="sidebar-item sidebar-l3" href="report.html"><span class="icon">▤</span>智能报告</a>
+              <a class="sidebar-item sidebar-l3" href="history.html"><span class="icon">⏱</span>历史评审记录</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 平台级模块：迎检模块之后 -->
+      <a class="sidebar-item" href="rule-library.html"><span class="icon">📘</span>规则库</a>
+      <a class="sidebar-item" href="event-control.html"><span class="icon">🧭</span>事件管控中心</a>
+      <a class="sidebar-item" href="data-quality.html"><span class="icon">📊</span>样本数据质控</a>
+      <!-- 任务管理：按需求隐藏（2026-09-22）。恢复时把本行换回下面注释里保留的原始 <a> 即可 -->
+      <!-- 原始导航项：<a class="sidebar-item" href="../index.html"><span class="icon">▦</span>任务管理</a> -->
+
+      <!-- ========== 系统管理 · 二级菜单（2026-09-24 新增） ==========
+           一级「系统管理」可折叠；二级＝用户管理 / 角色管理 / 操作日志。
+           RBAC 模型里对应第 9 个功能模块（权限粒度到功能模块）。 -->
+      <div class="sidebar-module">
+        <div class="sidebar-level1">
+          <span class="icon">⚙</span>
+          <span>系统管理</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="sidebar-module-body">
+          <a class="sidebar-item sidebar-l2 root-item" href="system-users.html"><span class="icon">◎</span>用户管理</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="system-roles.html"><span class="icon">🛡</span>角色管理</a>
+          <a class="sidebar-item sidebar-l2 root-item" href="system-audit.html"><span class="icon">🔍</span>操作日志</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">
+        <span>平台级模块</span><span class="sep">/</span>
+        <span class="current">知识图谱</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-icon-btn">🔍</div><div class="topbar-icon-btn">🔔</div>
+        <div class="user-chip"><div class="user-avatar">质</div><span>质量管理员</span></div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">知识图谱</div>
+          <div class="page-desc">质量文件图谱库 · 生物样本库图谱库 · 临床知识图谱 —— 多源实体与关系融合</div>
+        </div>
+        <div class="page-actions">
+          <div class="search-box" style="width:240px;"><input class="input" id="kg-search" placeholder="搜索实体 / 关系" /></div>
+          <button class="btn" id="kg-search-btn">搜索</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="kg-tabs">
+        <div class="tab" data-kg="quality">质量文件图谱库</div>
+        <div class="tab" data-kg="sample">生物样本库图谱库</div>
+        <div class="tab active" data-kg="clinical">临床知识图谱</div>
+      </div>
+
+      <div class="card kg-stats-card">
+        <div class="kg-stats">
+          <div class="kg-stat"><span>实体量</span><b id="kg-entity">50w</b><small id="kg-entity-sub">500,000 个实体</small></div>
+          <div class="kg-stat"><span>关系数量</span><b id="kg-relation">103w</b><small id="kg-relation-sub">1,030,000 条关系</small></div>
+          <div class="kg-stat"><span>实体类型</span><b id="kg-types">6</b><small id="kg-types-sub">疾病 / 症状 / 检查 / 药物 / 基因 / 样本</small></div>
+          <div class="kg-stat"><span>最近更新</span><b id="kg-updated">2026-11-03</b><small>数据版本 v2.4</small></div>
+        </div>
+      </div>
+
+      <div class="kg-grid">
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div class="card-header" style="padding:16px 18px 0;">
+            <div class="card-title" id="kg-graph-title">临床知识图谱</div>
+            <span class="tag tag-primary" id="kg-graph-tag">50w 实体 · 103w 关系</span>
+          </div>
+          <div class="kg-graph" id="kg-graph"></div>
+          <div class="kg-node-detail" id="kg-node-detail">点击节点查看实体详情；切换上方图谱库可查看不同知识域。</div>
+          <div class="kg-graph-foot"><span>实体节点按类型着色 · 连线表示关系</span><span>演示数据 · 2026-11-03</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">实体类型分布</div><span class="tag tag-default" id="kg-entity-total">50w</span></div>
+          <div class="kg-bars" id="kg-entity-bars"></div>
+          <div class="card-header" style="margin-top:18px;"><div class="card-title">关系类型分布</div><span class="tag tag-default" id="kg-relation-total">103w</span></div>
+          <div class="kg-bars" id="kg-relation-bars"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
+        <div class="card-header" style="padding:16px 20px 0;">
+          <div class="card-title">图谱库概览</div>
+          <span class="tag tag-primary">3 个图谱库</span>
+        </div>
+        <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+          <table class="table">
+            <thead><tr><th>图谱库</th><th style="width:110px;">实体量</th><th style="width:120px;">关系数量</th><th>实体类型</th><th style="width:130px;">更新时间</th><th style="width:80px;">状态</th></tr></thead>
+            <tbody id="kg-lib-body">
+              <tr class="kg-table-row" data-kg-row="quality"><td><div class="kg-lib-name"><span class="ico">📘</span>质量文件图谱库</div></td><td>1,284</td><td>3,976</td><td>文件、条款、制度、记录、责任人、部门</td><td>2026-10-28</td><td><span class="tag tag-success">正常</span></td></tr>
+              <tr class="kg-table-row" data-kg-row="sample"><td><div class="kg-lib-name"><span class="ico">🧬</span>生物样本库图谱库</div></td><td>8,642</td><td>21,530</td><td>样本、供者、设备、存储、质控、研究项目</td><td>2026-11-01</td><td><span class="tag tag-success">正常</span></td></tr>
+              <tr class="kg-table-row active" data-kg-row="clinical"><td><div class="kg-lib-name"><span class="ico">🩺</span>临床知识图谱</div></td><td><b style="color:var(--primary);">50w</b></td><td><b style="color:var(--primary);">103w</b></td><td>疾病、症状、检查、药物、基因、样本</td><td>2026-11-03</td><td><span class="tag tag-success">正常</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../assets/roles.js"></script>
+<script src="../assets/task-store.js"></script>
+<script src="../assets/review-store.js"></script>
+<script src="../assets/reminder-store.js"></script>
+<script src="../assets/app.js"></script>
+<script src="../assets/role-guard.js"></script>
+<script src="../assets/agent-widget.js"></script>
+<script>
+(function () {
+  'use strict';
+  function $(s) { return document.querySelector(s); }
+  function toast(msg, type) { if (window.showToast) window.showToast(msg, type || 'success'); }
+
+  var POS = [[400, 215], [170, 88], [630, 88], [120, 318], [680, 318], [300, 386]];
+
+  function makeGraph(list) {
+    return {
+      nodes: list.map(function (n, i) {
+        return { label: n.label, color: n.color, desc: n.desc, x: POS[i][0], y: POS[i][1], r: i === 0 ? 46 : 33 };
+      }),
+      edges: [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 5], [2, 5], [3, 4]]
+    };
+  }
+
+  var KG = {
+    clinical: {
+      name: '临床知识图谱', entity: '50w', entitySub: '500,000 个实体', relation: '103w', relationSub: '1,030,000 条关系',
+      types: '6', typesSub: '疾病 / 症状 / 检查 / 药物 / 基因 / 样本', updated: '2026-11-03',
+      entityBars: [['疾病', '12w', 100, ''], ['样本', '10w', 83, 'green'], ['药物', '9w', 75, 'orange'], ['症状', '8w', 67, 'violet'], ['检查', '6w', 50, 'cyan'], ['基因', '5w', 42, 'slate']],
+      relationBars: [['关联', '25w', 100, ''], ['诊断', '20w', 80, 'green'], ['治疗', '18w', 72, 'orange'], ['属于', '15w', 60, 'violet'], ['导致', '10w', 40, 'cyan'], ['其他', '15w', 60, 'slate']],
+      graph: makeGraph([
+        { label: '疾病', color: '#2B7FFF', desc: '12w 个疾病实体，关联症状、检查、药物与基因' },
+        { label: '症状', color: '#00B42A', desc: '8w 个症状实体，与疾病和样本关联' },
+        { label: '药物', color: '#FF7D00', desc: '9w 个药物实体，形成治疗关系 18w 条' },
+        { label: '检查', color: '#722ED1', desc: '6w 个检查实体，用于诊断与分型' },
+        { label: '基因', color: '#0FC6C2', desc: '5w 个基因实体，关联疾病易感与用药' },
+        { label: '样本', color: '#4E5969', desc: '10w 个样本实体，连接临床与生物样本库' }
+      ])
+    },
+    sample: {
+      name: '生物样本库图谱库', entity: '8,642', entitySub: '8,642 个实体', relation: '21,530', relationSub: '21,530 条关系',
+      types: '6', typesSub: '样本 / 供者 / 设备 / 存储 / 质控 / 研究项目', updated: '2026-11-01',
+      entityBars: [['样本', '3,240', 100, ''], ['供者', '1,860', 57, 'green'], ['设备', '1,420', 44, 'orange'], ['存储', '980', 30, 'violet'], ['质控', '742', 23, 'cyan'], ['研究项目', '400', 12, 'slate']],
+      relationBars: [['来源于', '6,420', 100, ''], ['存储于', '5,180', 81, 'green'], ['质控于', '3,960', 62, 'orange'], ['关联项目', '2,880', 45, 'violet'], ['使用设备', '2,090', 33, 'cyan'], ['其他', '1,000', 16, 'slate']],
+      graph: makeGraph([
+        { label: '样本', color: '#2B7FFF', desc: '3,240 个样本实体，覆盖血清、血浆、组织等类型' },
+        { label: '供者', color: '#00B42A', desc: '1,860 个供者实体，关联知情同意与样本来源' },
+        { label: '设备', color: '#FF7D00', desc: '1,420 台设备实体，关联校准与使用记录' },
+        { label: '存储', color: '#722ED1', desc: '980 个存储位置实体，关联温度与库存' },
+        { label: '质控', color: '#0FC6C2', desc: '742 个质控实体，关联 QC 结果与偏差' },
+        { label: '研究项目', color: '#4E5969', desc: '400 个研究项目实体，关联样本使用与伦理' }
+      ])
+    },
+    quality: {
+      name: '质量文件图谱库', entity: '1,284', entitySub: '1,284 个实体', relation: '3,976', relationSub: '3,976 条关系',
+      types: '6', typesSub: '文件 / 条款 / 制度 / 记录 / 责任人 / 部门', updated: '2026-10-28',
+      entityBars: [['文件', '386', 100, ''], ['记录', '312', 81, 'green'], ['条款', '185', 48, 'orange'], ['责任人', '146', 38, 'violet'], ['制度', '88', 23, 'cyan'], ['部门', '167', 43, 'slate']],
+      relationBars: [['引用', '1,240', 100, ''], ['归属', '980', 79, 'green'], ['负责', '742', 60, 'orange'], ['依据', '540', 44, 'violet'], ['关联', '324', 26, 'cyan'], ['其他', '150', 12, 'slate']],
+      graph: makeGraph([
+        { label: '文件', color: '#2B7FFF', desc: '386 个体系文件实体，涵盖手册、程序与 SOP' },
+        { label: '条款', color: '#722ED1', desc: '185 条标准条款，关联文件与记录' },
+        { label: '制度', color: '#00B42A', desc: '88 项管理制度，关联责任部门' },
+        { label: '记录', color: '#FF7D00', desc: '312 类记录，作为体系运行证据' },
+        { label: '责任人', color: '#0FC6C2', desc: '146 名责任人，关联岗位与审批' },
+        { label: '部门', color: '#4E5969', desc: '167 个部门实体，关联职责与文件范围' }
+      ])
+    }
+  };
+
+  var current = 'clinical';
+
+  function renderBars(host, rows) {
+    host.innerHTML = rows.map(function (r) {
+      return '<div class="kg-bar-row"><span>' + r[0] + '</span><div class="kg-bar-track"><div class="kg-bar-fill ' + r[3] + '" style="width:' + r[2] + '%"></div></div><b>' + r[1] + '</b></div>';
+    }).join('');
+  }
+
+  function renderGraph(d) {
+    var svg = '<svg viewBox="0 0 800 430" preserveAspectRatio="xMidYMid meet" aria-label="' + d.name + '">';
+    d.graph.edges.forEach(function (e) {
+      var a = d.graph.nodes[e[0]], b = d.graph.nodes[e[1]];
+      svg += '<line class="kg-edge" x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '"></line>';
+    });
+    d.graph.nodes.forEach(function (n, i) {
+      svg += '<g class="kg-node" data-idx="' + i + '" role="button" tabindex="0">' +
+        '<title>' + n.label + ' · ' + n.desc + '</title>' +
+        '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + n.r + '" fill="' + n.color + '"></circle>' +
+        '<text x="' + n.x + '" y="' + n.y + '">' + n.label + '</text>' +
+        '</g>';
+    });
+    svg += '</svg>';
+    $('#kg-graph').innerHTML = svg;
+  }
+
+  function renderKG(key) {
+    var d = KG[key];
+    if (!d) return;
+    current = key;
+    document.querySelectorAll('#kg-tabs .tab').forEach(function (t) {
+      t.classList.toggle('active', t.getAttribute('data-kg') === key);
+    });
+    $('#kg-entity').textContent = d.entity;
+    $('#kg-entity-sub').textContent = d.entitySub;
+    $('#kg-relation').textContent = d.relation;
+    $('#kg-relation-sub').textContent = d.relationSub;
+    $('#kg-types').textContent = d.types;
+    $('#kg-types-sub').textContent = d.typesSub;
+    $('#kg-updated').textContent = d.updated;
+    $('#kg-graph-title').textContent = d.name;
+    $('#kg-graph-tag').textContent = d.entity + ' 实体 · ' + d.relation + ' 关系';
+    $('#kg-entity-total').textContent = d.entity;
+    $('#kg-relation-total').textContent = d.relation;
+    renderBars($('#kg-entity-bars'), d.entityBars);
+    renderBars($('#kg-relation-bars'), d.relationBars);
+    renderGraph(d);
+    $('#kg-node-detail').textContent = '点击节点查看实体详情；当前图谱：' + d.name;
+    document.querySelectorAll('#kg-lib-body tr').forEach(function (tr) {
+      tr.classList.toggle('active', tr.getAttribute('data-kg-row') === key);
+    });
+  }
+
+  document.getElementById('kg-tabs').addEventListener('click', function (e) {
+    var tab = e.target.closest('[data-kg]');
+    if (tab) renderKG(tab.getAttribute('data-kg'));
+  });
+
+  document.getElementById('kg-graph').addEventListener('click', function (e) {
+    var g = e.target.closest('.kg-node');
+    if (!g) return;
+    var d = KG[current];
+    var n = d.graph.nodes[+g.getAttribute('data-idx')];
+    var deg = d.graph.edges.filter(function (x) { return x[0] === +g.getAttribute('data-idx') || x[1] === +g.getAttribute('data-idx'); }).length;
+    $('#kg-node-detail').innerHTML = '<b>' + n.label + '</b> · ' + n.desc + ' · 当前关联关系 ' + deg + ' 条（示例视图）';
+  });
+
+  function doSearch() {
+    var kw = ($('#kg-search').value || '').trim();
+    if (!kw) { toast('请输入实体或关系关键字', 'info'); return; }
+    toast('已在「' + KG[current].name + '」中检索「' + kw + '」', 'success');
+    $('#kg-node-detail').innerHTML = '检索关键字：<b>' + kw + '</b> · 命中实体与关系将在图谱中高亮（演示）';
+  }
+  $('#kg-search-btn').addEventListener('click', doSearch);
+  $('#kg-search').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+
+  renderKG('clinical');
+})();
+</script>
+</body>
+</html>

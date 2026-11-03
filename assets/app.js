@@ -4081,7 +4081,7 @@ window.closeModal = closeModal;
    ========================================================================== */
 (function () {
   var BASE = 'http://192.168.77.144:20080/package1/';
-  var MAP = { 'AI智能问答': { k: 'chat', t: 'AI 智能问答' }, '知识图谱': { k: 'kg', t: '知识图谱' } };
+  var MAP = { 'AI智能问答': { k: 'chat', t: 'AI 智能问答' } };
   var nav = document.querySelector('.sidebar-nav');
   if (!nav) return;
   var items = [];
