@@ -35,6 +35,7 @@
   .dq-gov-grid-2.dq-wide-left { grid-template-columns: minmax(0, 1.5fr) minmax(0, .5fr); }
   .dq-gov-stats { margin-bottom: 14px; }
   .dq-gov-pane .tag { white-space: nowrap; }
+  .modal .tag { white-space: nowrap; }
   @media (max-width: 1280px) { .dq-gov-grid-2, .dq-gov-grid-2.dq-wide-left { grid-template-columns: 1fr; } }
 
   .dq-fusion { display: grid; grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1.15fr) 30px minmax(0, 1fr); align-items: center; gap: 8px; }
@@ -1610,6 +1611,13 @@
     ]
   };
 
+  function dqPlanOwner(name) {
+    if (/温度|液氮/.test(name)) return '孙七';
+    if (/知情同意|伦理/.test(name)) return '王静';
+    if (/冻存|复苏|处理记录/.test(name)) return '李慧';
+    return '周八';
+  }
+
   var dqPlanBtn = document.getElementById('dq-plan-generate');
   if (dqPlanBtn) {
     dqPlanBtn.addEventListener('click', function () {
@@ -1618,10 +1626,70 @@
       var age = document.getElementById('dq-plan-age').value;
       var use = document.getElementById('dq-plan-use').value;
       var list = DQ_PLAN[type] || DQ_PLAN['血清'];
+      var rows = list.map(function (x) {
+        var freq = (x[1].split('·')[0] || '').trim();
+        var m = x[1].match(/依据\s*([0-9.]+)/);
+        return { name: x[0], freq: freq, basis: m ? m[1] : '—', owner: dqPlanOwner(x[0]), tag: x[2], tagCls: x[3] };
+      });
       var host = document.getElementById('dq-plan-list');
-      host.innerHTML = list.map(function (x) {
-        return '<div class="dq-plan-item"><div class="dq-plan-name"><b>' + x[0] + '</b><span>' + x[1] + '</span></div><span class="tag ' + x[3] + '">' + x[2] + '</span></div>';
+      host.innerHTML = rows.map(function (x) {
+        return '<div class="dq-plan-item"><div class="dq-plan-name"><b>' + x.name + '</b><span>' + x.freq + ' · 依据 ' + x.basis + ' · ' + x.owner + '</span></div><span class="tag ' + x.tagCls + '">' + x.tag + '</span></div>';
       }).join('');
+
+      var risks = [];
+      if (age.indexOf('>') > -1) risks.push('储存时长 > 12 个月，样本降解风险升高');
+      if (source === '外部合作') risks.push('外部来源，运输温控与合规材料风险增加');
+      if (use === '蛋白组' || use === '细胞培养') risks.push('下游对分装量与冻融次数敏感');
+      if (type === '组织') risks.push('组织前处理与固定时限要求更高');
+      if (!risks.length) risks.push('常规样本风险，按标准质控计划执行');
+      var level = (source === '外部合作' && age.indexOf('>') > -1) ? '高' : (risks.length > 1 ? '中' : '低');
+      var levelCls = level === '高' ? 'tag-error' : (level === '中' ? 'tag-warning' : 'tag-success');
+      var now = new Date();
+      var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+      var planId = 'QC-PLAN-' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '-001';
+      var time = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+      var detailRows = rows.map(function (x) {
+        return '<tr><td><strong>' + x.name + '</strong></td><td>' + x.freq + '</td><td>' + x.owner + '</td><td>' + x.basis + '</td><td><span class="tag ' + x.tagCls + '">' + x.tag + '</span></td></tr>';
+      }).join('');
+      var body = '<div class="pm-desc-list">' +
+        '<div class="pm-desc-row"><span class="k">计划编号</span><span class="v">' + planId + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">样本类型</span><span class="v">' + type + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">样本来源</span><span class="v">' + source + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">储存时长</span><span class="v">' + age + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">研究用途</span><span class="v">' + use + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">生成时间</span><span class="v">' + time + '</span></div>' +
+        '<div class="pm-desc-row"><span class="k">计划覆盖度</span><span class="v"><strong style="color:var(--success);">94%</strong> · ' + rows.length + ' 项质控活动</span></div>' +
+        '<div class="pm-desc-row"><span class="k">风险等级</span><span class="v"><span class="tag ' + levelCls + '">' + level + '风险</span></span></div>' +
+        '</div>' +
+        '<div class="pm-banner" style="margin-top:14px; margin-bottom:14px; background:var(--warning-bg); border-color:#FFE0B2; color:#8B5000;"><span class="pm-banner-ico">⚠</span><div><strong>风险提示：</strong>' + risks.join('；') + '。系统已据此调整质控频次与责任人。</div></div>' +
+        '<div style="font-size:13px; font-weight:600; margin-bottom:8px;">质控计划明细</div>' +
+        '<div class="table-wrap"><table class="table"><thead><tr><th>质控项</th><th style="width:90px;">频次</th><th style="width:76px;">责任人</th><th style="width:74px;">依据</th><th style="width:74px;">类型</th></tr></thead><tbody>' + detailRows + '</tbody></table></div>' +
+        '<div style="font-size:13px; font-weight:600; margin:14px 0 8px;">生成依据</div>' +
+        '<div class="dq-suggest">' +
+        '<div class="dq-suggest-item"><b>GB/T 37864-2019 · 7.8.2.1</b><span>覆盖样本保藏全过程的 QC 活动，并明确 QC 准则与执行频次。</span></div>' +
+        '<div class="dq-suggest-item"><b>GB/T 37864-2019 · 7.7.3</b><span>储存过程中应测量、监控并记录温度等关键参数，偏离时评估影响。</span></div>' +
+        '<div class="dq-suggest-item"><b>规则库 · 质控超限与趋势异常</b><span>结合历史 QC 结果、样本类型与用途，动态调整抽检频次。</span></div>' +
+        '</div>';
+
+      modal({
+        title: '个性化质控计划详情',
+        sub: type + ' · ' + source + ' · ' + age + ' · ' + use,
+        size: 'modal-lg',
+        body: body,
+        footer: '<button class="btn" data-pm-close>关闭</button>' +
+          '<button class="btn" id="dq-plan-export">导出计划</button>' +
+          '<button class="btn btn-primary" id="dq-plan-dispatch">下发质控任务</button>',
+        onMount: function (root) {
+          root.querySelector('#dq-plan-export').addEventListener('click', function () {
+            window.showToast('个性化质控计划已导出为 PDF', 'success');
+          });
+          root.querySelector('#dq-plan-dispatch').addEventListener('click', function () {
+            window.showToast('已下发 ' + rows.length + ' 项质控任务至责任人，计划 ' + planId + ' 生效', 'success');
+            close();
+          });
+        }
+      });
       window.showToast('已生成「' + type + ' / ' + source + ' / ' + age + ' / ' + use + '」个性化质控计划', 'success');
     });
   }

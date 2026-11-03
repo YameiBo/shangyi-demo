@@ -8,6 +8,13 @@
 <link rel="stylesheet" href="../assets/styles.css" />
 <link rel="stylesheet" href="../assets/agent-widget.css" />
 <link rel="stylesheet" href="../assets/platform-modules.css" />
+<style>
+  .table th:first-child, .table td:first-child { white-space: nowrap; }
+  .table .tag { white-space: nowrap; }
+  .col-actions .btn-text { padding: 4px 6px; font-size: 12.5px; }
+  .rl-rules-table { table-layout: fixed; }
+  .rl-rules-table .pm-expr { display: block; }
+</style>
 </head>
 <body>
 <div class="layout">
@@ -171,7 +178,7 @@
             <button class="btn" id="rl-rule-reset">重置</button>
           </div>
           <div class="table-wrap">
-            <table class="table">
+            <table class="table rl-rules-table">
               <thead>
                 <tr>
                   <th style="width:186px;">规则名称</th>
@@ -182,7 +189,7 @@
                   <th style="width:80px;">状态</th>
                   <th style="width:84px;">执行次数</th>
                   <th style="width:118px;">最后执行</th>
-                  <th class="col-actions" style="width:184px;">操作</th>
+                  <th class="col-actions" style="width:250px;">操作</th>
                 </tr>
               </thead>
               <tbody id="rl-rules"></tbody>
@@ -362,11 +369,11 @@
       '<td>' + esc(r.freq || '0 次') + '</td>' +
       '<td>' + esc(r.last || '—') + '</td>' +
       '<td class="col-actions">' +
-      '<button class="pm-icon-btn" data-pm="rule-toggle" title="启用 / 停用">⏻</button>' +
-      '<button class="pm-icon-btn" data-pm="rule-view" title="查看执行记录">👁</button>' +
-      '<button class="pm-icon-btn" data-pm="rule-tpl" title="存为模板">📋</button>' +
-      '<a class="pm-icon-btn" data-pm="rule-edit" href="rule-editor.html?rule=' + encodeURIComponent(r.id) + '" title="编辑规则">✎</a>' +
-      '<button class="pm-icon-btn" data-pm="rule-delete" title="删除规则">🗑</button>' +
+      '<button class="btn-text" data-pm="rule-toggle" title="启用 / 停用">' + (r.on ? '停用' : '启用') + '</button>' +
+      '<button class="btn-text" data-pm="rule-view" title="查看执行记录">查看</button>' +
+      '<button class="btn-text" data-pm="rule-tpl" title="存为模板">存模板</button>' +
+      '<a class="btn-text" data-pm="rule-edit" href="rule-editor.html?rule=' + encodeURIComponent(r.id) + '" title="编辑规则">编辑</a>' +
+      '<button class="btn-text" data-pm="rule-delete" title="删除规则">删除</button>' +
       '</td></tr>';
   }
   function renderRules() {
