@@ -14,6 +14,9 @@
   .col-actions .btn-text { padding: 4px 6px; font-size: 12.5px; }
   .rl-rules-table { table-layout: fixed; }
   .rl-rules-table .pm-expr { display: block; }
+  .pm-rule-src { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; max-width: 148px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pm-rule-src a { color: var(--primary); text-decoration: none; }
+  .pm-rule-src a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -106,6 +109,7 @@
             <select class="select" id="rl-rule-source" style="width:158px;height:32px;">
               <option value="">全部来源</option>
               <option value="GB/T 37864-2019">GB/T 37864-2019</option>
+              <option value="知识库文档">知识库文档</option>
               <option value="内部规则">内部规则</option>
             </select>
             <button class="btn" id="rl-rule-reset">重置</button>
@@ -293,8 +297,9 @@
   function rowHtml(r) {
     return '<tr data-id="' + esc(r.id) + '">' +
       '<td><span class="pm-rule-title">' + esc(r.name) + '</span></td>' +
-      '<td><div><span class="tag ' + (r.source === 'GB/T 37864-2019' ? 'tag-primary' : 'tag-default') + '">' + (r.source === 'GB/T 37864-2019' ? 'GB/T 37864' : '内部') + '</span></div>' +
-        '<div style="font-size:11px; color:var(--text-tertiary); margin-top:3px;">' + esc(r.clause || '—') + '</div></td>' +
+      '<td>' + (r.source === '知识库文档'
+        ? '<div><span class="tag tag-primary">知识库文档</span></div><div class="pm-rule-src"><a href="' + esc(r.sourceDocUrl || ('knowledge-base.html#doc-' + r.sourceDocId)) + '" title="' + esc(r.sourceDocName || '知识库文档') + '">' + esc(r.sourceDocName || '知识库文档') + '</a></div>'
+        : '<div><span class="tag ' + (r.source === 'GB/T 37864-2019' ? 'tag-primary' : 'tag-default') + '">' + (r.source === 'GB/T 37864-2019' ? 'GB/T 37864' : '内部') + '</span></div><div style="font-size:11px; color:var(--text-tertiary); margin-top:3px;">' + esc(r.clause || '—') + '</div>') + '</td>' +
       '<td><span class="pm-chip pm-chip-type" data-ver>' + esc(r.ver) + '</span></td>' +
       '<td>' + esc(r.trigger || '—') + '</td>' +
       '<td><span class="pm-expr" title="' + esc(r.expr) + '">' + esc(r.expr) + '</span></td>' +
@@ -316,7 +321,7 @@
     var src = document.getElementById('rl-rule-source').value;
     var all = STORE ? STORE.all() : [];
     var list = all.filter(function (r) {
-      if (kw && (r.name + ' ' + r.expr + ' ' + (r.clause || '') + ' ' + (r.source || '')).indexOf(kw) < 0) return false;
+      if (kw && (r.name + ' ' + r.expr + ' ' + (r.clause || '') + ' ' + (r.source || '') + ' ' + (r.sourceDocName || '')).indexOf(kw) < 0) return false;
       if (st === 'on' && !r.on) return false;
       if (st === 'off' && r.on) return false;
       if (src && (r.source || '内部规则') !== src) return false;

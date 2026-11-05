@@ -187,6 +187,32 @@
   .kb-parse-result { margin-top: 14px; padding: 12px; border: 1px solid #B8F0C2; border-radius: 8px; background: var(--success-bg); font-size: 12.5px; color: #00892A; line-height: 1.7; }
   .kb-parse-result b { color: #006B20; }
   .kb-parse-sim { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #B8F0C2; color: var(--text-secondary); }
+  .kb-doc-row-highlight td { background: var(--warning-bg) !important; }
+  .kb-doc-table .col-actions { width: 120px; }
+  .kb-rule-doc { display: flex; align-items: center; gap: 9px; padding: 10px 12px; margin-bottom: 14px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg-page); font-size: 12.5px; }
+  .kb-rule-doc .f-ico { width: 30px; height: 30px; border-radius: 7px; background: var(--primary-lighter); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .kb-rule-doc b { display: block; color: var(--text-primary); }
+  .kb-rule-doc span { font-size: 11.5px; color: var(--text-tertiary); }
+  .kb-rule-loading { padding: 46px 20px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
+  .kb-rule-spinner { width: 34px; height: 34px; margin: 0 auto 12px; border: 3px solid var(--primary-light); border-top-color: var(--primary); border-radius: 50%; animation: kb-spin .8s linear infinite; }
+  @keyframes kb-spin { to { transform: rotate(360deg); } }
+  .kb-rule-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 8px; background: var(--primary-50); color: var(--primary-dark); font-size: 12.5px; line-height: 1.6; }
+  .kb-rule-summary b { color: var(--primary); }
+  .kb-rule-toolbar { display: flex; align-items: center; gap: 12px; margin: 12px 0 8px; font-size: 12.5px; color: var(--text-secondary); }
+  .kb-check-all { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; }
+  .kb-rule-selected { margin-left: auto; color: var(--text-tertiary); font-size: 12px; }
+  .kb-rule-list { display: flex; flex-direction: column; gap: 8px; }
+  .kb-rule-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 8px; background: #fff; cursor: pointer; transition: border-color .15s, background .15s; }
+  .kb-rule-item:hover { border-color: var(--primary-200); background: var(--primary-lighter); }
+  .kb-rule-item.selected { border-color: var(--primary-200); background: var(--primary-50); }
+  .kb-rule-item .checkbox { margin-top: 2px; flex-shrink: 0; }
+  .kb-rule-main { flex: 1; min-width: 0; }
+  .kb-rule-main b { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .kb-rule-expr { margin-top: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); background: var(--bg-page); border-left: 2px solid var(--primary-100); padding: 5px 8px; border-radius: 0 4px 4px 0; }
+  .kb-rule-meta { margin-top: 4px; font-size: 11.5px; color: var(--text-tertiary); }
+  .kb-rule-item > .tag { flex-shrink: 0; margin-top: 2px; }
+  .kb-rule-note { margin-top: 10px; font-size: 11.5px; color: var(--text-tertiary); line-height: 1.7; }
+  .kb-rule-empty { padding: 36px 20px; text-align: center; color: var(--text-tertiary); font-size: 13px; line-height: 1.8; }
 </style>
 </head>
 <body data-no-review-bar="1">
@@ -395,6 +421,7 @@
                   <th><span class="checkbox" id="kb-doc-check-all"></span></th>
                   <th>文件名</th>
                   <th>创建时间</th>
+                  <th class="col-actions">操作</th>
                 </tr>
               </thead>
               <tbody id="kb-doc-body"></tbody>
@@ -716,11 +743,46 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="kb-rule-modal">
+  <div class="modal modal-xl" role="dialog" aria-modal="true" aria-labelledby="kb-rule-title">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="kb-rule-title">智能解析 · 规则提取</div>
+        <div class="modal-subtitle" id="kb-rule-sub">基于当前文档内容提取可执行规则</div>
+      </div>
+      <button class="modal-close" type="button" data-kb-rule-close aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="kb-rule-doc" id="kb-rule-doc"></div>
+      <div class="kb-rule-loading" id="kb-rule-loading">
+        <div class="kb-rule-spinner"></div>
+        正在解析文档内容并提取规则…
+      </div>
+      <div id="kb-rule-content" style="display:none;">
+        <div class="kb-rule-summary" id="kb-rule-summary"></div>
+        <div class="kb-rule-toolbar">
+          <label class="kb-check-all"><span class="checkbox" id="kb-rule-check-all"></span>全选 / 取消全选</label>
+          <span class="kb-rule-selected" id="kb-rule-selected">已选 0 条</span>
+        </div>
+        <div class="kb-rule-list" id="kb-rule-list"></div>
+        <div class="kb-rule-note">解析结果为本次会话临时数据，未确认不会写入规则库；关闭弹窗后本次结果丢弃。同一文档可多次解析，互不影响。</div>
+      </div>
+      <div class="kb-rule-empty" id="kb-rule-empty" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <span class="kb-modal-footer-note" id="kb-rule-foot">来源文档：—</span>
+      <button class="btn" type="button" data-kb-rule-close>关闭</button>
+      <button class="btn btn-primary" type="button" id="kb-rule-confirm" disabled>确认加入规则库</button>
+    </div>
+  </div>
+</div>
+
 <script src="../assets/roles.js"></script>
 <script src="../assets/task-store.js"></script>
 <script src="../assets/review-store.js"></script>
 <script src="../assets/reminder-store.js"></script>
 <script src="../assets/app.js"></script>
+<script src="../assets/rule-store.js"></script>
 <script src="../assets/role-guard.js"></script>
 <script src="../assets/agent-widget.js"></script>
 <script>
@@ -730,6 +792,9 @@
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
   function toast(msg) { if (window.showToast) window.showToast(msg, 'success'); }
+  function escAttr(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
   var currentView = 'manage';
   function setView(name) {
@@ -802,15 +867,22 @@
   function renderDocs(key) {
     var list = DOC_DATA[key] || DOC_DATA.all;
     var body = $('#kb-doc-body');
-    body.innerHTML = list.map(function (d) {
-      var icon = d.type === 'folder' ? '📁' : '📄';
-      var name = d.type === 'folder'
+    body.innerHTML = list.map(function (d, i) {
+      var isFolder = d.type === 'folder';
+      var icon = isFolder ? '📁' : '📄';
+      var name = isFolder
         ? '<span class="kb-folder-name">' + d.name + '</span> <span class="tag tag-default" style="margin-left:8px;">' + d.count + ' 份</span>'
         : d.name;
-      return '<tr ' + (d.type === 'folder' ? 'data-kb-folder="' + d.name + '"' : '') + '>' +
+      var docId = key + '-' + i;
+      var attrs = isFolder
+        ? 'data-kb-folder="' + escAttr(d.name) + '"'
+        : 'data-doc-id="' + docId + '" data-doc-name="' + escAttr(d.name) + '" data-doc-tab="' + key + '"';
+      var action = isFolder ? '' : '<button class="btn-text" data-kb-parse-rule>智能解析</button>';
+      return '<tr ' + attrs + '>' +
         '<td><span class="checkbox"></span></td>' +
-        '<td><div class="kb-file"><span class="ico ' + (d.type === 'folder' ? 'folder' : '') + '">' + icon + '</span>' + name + '</div></td>' +
-        '<td><span class="kb-time">' + d.time + '</span></td></tr>';
+        '<td><div class="kb-file"><span class="ico ' + (isFolder ? 'folder' : '') + '">' + icon + '</span>' + name + '</div></td>' +
+        '<td><span class="kb-time">' + d.time + '</span></td>' +
+        '<td class="col-actions">' + action + '</td></tr>';
     }).join('');
     $('#kb-doc-current').textContent = DOC_LABEL[key] || '全部文件';
     $('#kb-doc-summary').textContent = key === 'all'
@@ -910,8 +982,18 @@
   bindCheckAll('#kb-doc-check-all', '#kb-doc-body .checkbox');
 
   $('#kb-doc-body').addEventListener('click', function (e) {
-    var row = e.target.closest('[data-kb-folder]');
-    if (row) toast('打开目录：' + row.getAttribute('data-kb-folder'));
+    var btn = e.target.closest('[data-kb-parse-rule]');
+    if (btn) {
+      var row = btn.closest('[data-doc-id]');
+      if (row) openRuleParse({
+        id: row.getAttribute('data-doc-id'),
+        name: row.getAttribute('data-doc-name'),
+        tab: row.getAttribute('data-doc-tab')
+      });
+      return;
+    }
+    var folder = e.target.closest('[data-kb-folder]');
+    if (folder) toast('打开目录：' + folder.getAttribute('data-kb-folder'));
   });
 
   var LIFE = {
@@ -1369,16 +1451,188 @@
     window.showToast('文档已入库，切片 / 向量 / 索引已更新，相似度检索可用', 'success');
   });
 
+  var RULE_POOL = [
+    { name: '文档适用范围校验', trigger: '文档入库 / 更新', expr: 'IF 文档未声明适用范围或适用对象 → 标记为待补充', clause: '4.1.4', confidence: '0.93', conds: [{ field: '适用范围', op: '为空', val: '', join: 'AND' }], acts: [{ act: '生成事件', who: '体系专员', how: '待办任务' }] },
+    { name: '版本与发布日期完整性', trigger: '文档入库', expr: 'IF 缺少版本号或发布日期 → 阻断发布并退回补全', clause: '7.1.3', confidence: '0.95', conds: [{ field: '版本号', op: '为空', val: '', join: 'OR' }, { field: '发布日期', op: '为空', val: '', join: 'OR' }], acts: [{ act: '阻断操作', who: '文件发布', how: '拒绝发布' }] },
+    { name: '条款引用有效性检查', trigger: '文档版本变更', expr: 'IF 引用条款已废止或版本不一致 → 生成修订任务', clause: '8.3.2', confidence: '0.91', conds: [{ field: '引用条款版本', op: '≠', val: '现行版本', join: 'AND' }], acts: [{ act: '生成事件', who: '体系专员', how: '修订任务' }] },
+    { name: '文件审批状态校验', trigger: '文档发布', expr: 'IF 审批状态 ≠ 已批准 → 禁止发布', clause: '8.3.2', confidence: '0.96', conds: [{ field: '审批状态', op: '≠', val: '已批准', join: 'AND' }], acts: [{ act: '阻断操作', who: '文件发布', how: '拒绝发布' }, { act: '发送通知', who: '文件责任人', how: '系统通知' }] },
+    { name: '记录保存期限检查', trigger: '定时触发（每月）', expr: 'IF 记录超过保存期限未归档 → 生成归档任务', clause: '8.4.2', confidence: '0.89', conds: [{ field: '记录保存期限', op: '≤', val: '到期', join: 'AND' }], acts: [{ act: '生成事件', who: '记录管理员', how: '归档任务' }] },
+    { name: '责任人与质量职责完整性', trigger: '文档更新', expr: 'IF 未指定责任人或质量职责 → 通知体系专员补全', clause: '5.8 / 5.9', confidence: '0.87', conds: [{ field: '责任人', op: '为空', val: '', join: 'OR' }, { field: '质量职责', op: '为空', val: '', join: 'OR' }], acts: [{ act: '发送通知', who: '体系专员', how: '待办提醒' }] },
+    { name: '知情同意与伦理信息校验', trigger: '文档入库 / 引用', expr: 'IF 文档涉及人源样本但未关联伦理批件或知情同意 → 标记合规风险', clause: '7.2.3.4', confidence: '0.92', conds: [{ field: '伦理批件', op: '为空', val: '', join: 'OR' }, { field: '知情同意', op: '为空', val: '', join: 'OR' }], acts: [{ act: '生成事件', who: '质量负责人', how: '合规风险' }] },
+    { name: '样本追溯信息完整性', trigger: '文档入库 / 更新', expr: 'IF 缺少样本唯一标识、来源或储存位置 → 生成追溯核查任务', clause: '7.5.1', confidence: '0.90', conds: [{ field: '样本唯一标识', op: '为空', val: '', join: 'OR' }, { field: '储存位置', op: '为空', val: '', join: 'OR' }], acts: [{ act: '生成事件', who: '样本管理员', how: '追溯核查' }] }
+  ];
+
+  var ruleModal = $('#kb-rule-modal');
+  var ruleTimer = null;
+  var currentRuleDoc = null;
+  var currentRuleList = [];
+
+  function docTabName(tab) { return DOC_LABEL[tab] || '知识库文档'; }
+
+  function buildParsedRules(doc) {
+    var n = 0;
+    var parts = String(doc.id || '').split('-');
+    n = parseInt(parts[parts.length - 1], 10) || 0;
+    var count = 4 + (n % 2);
+    var existing = window.RULE_STORE ? window.RULE_STORE.all() : [];
+    var rules = [];
+    for (var i = 0; i < count; i++) {
+      var t = RULE_POOL[(n + i) % RULE_POOL.length];
+      var dup = existing.some(function (r) { return r.sourceDocId === doc.id && r.name === t.name; });
+      rules.push({
+        name: t.name, trigger: t.trigger, expr: t.expr, clause: t.clause, confidence: t.confidence,
+        conds: t.conds, acts: t.acts, duplicate: dup, selected: !dup
+      });
+    }
+    return rules;
+  }
+
+  function renderParsedRules() {
+    var doc = currentRuleDoc;
+    var list = currentRuleList;
+    var dupCount = list.filter(function (r) { return r.duplicate; }).length;
+    $('#kb-rule-summary').innerHTML = '<span>📄</span><div><b>' + escAttr(doc.name) + '</b> · 识别到 <b>' + list.length + '</b> 条候选规则' + (dupCount ? ' · <b>' + dupCount + '</b> 条已在规则库' : '') + '</div>';
+    $('#kb-rule-list').innerHTML = list.map(function (r, i) {
+      return '<div class="kb-rule-item ' + (r.selected ? 'selected' : '') + '" data-rule-index="' + i + '">' +
+        '<span class="checkbox ' + (r.selected ? 'checked' : '') + '"></span>' +
+        '<div class="kb-rule-main"><b>' + escAttr(r.name) + '</b>' +
+        '<div class="kb-rule-expr">' + escAttr(r.expr) + '</div>' +
+        '<div class="kb-rule-meta">' + escAttr(r.trigger) + ' · 置信度 ' + r.confidence + ' · 依据 ' + escAttr(r.clause) + '</div></div>' +
+        (r.duplicate ? '<span class="tag tag-default">已存在</span>' : '<span class="tag tag-primary">候选</span>') +
+        '</div>';
+    }).join('');
+    updateRuleSelection();
+  }
+
+  function updateRuleSelection() {
+    var selected = currentRuleList.filter(function (r) { return r.selected; });
+    var all = currentRuleList.length > 0 && selected.length === currentRuleList.length;
+    $('#kb-rule-selected').textContent = '已选 ' + selected.length + ' / ' + currentRuleList.length + ' 条';
+    $('#kb-rule-check-all').classList.toggle('checked', all);
+    $('#kb-rule-confirm').disabled = currentRuleList.length === 0;
+    $all('#kb-rule-list .kb-rule-item').forEach(function (el, i) {
+      el.classList.toggle('selected', !!currentRuleList[i].selected);
+      var cb = el.querySelector('.checkbox');
+      if (cb) cb.classList.toggle('checked', !!currentRuleList[i].selected);
+    });
+  }
+
+  function openRuleParse(doc) {
+    if (!ruleModal || !doc) return;
+    currentRuleDoc = doc;
+    currentRuleList = [];
+    $('#kb-rule-sub').textContent = '来源：' + docTabName(doc.tab) + ' · ' + doc.id + ' · 解析结果仅本次会话有效';
+    $('#kb-rule-doc').innerHTML = '<span class="f-ico">📄</span><div><b>' + escAttr(doc.name) + '</b><span>来源：' + docTabName(doc.tab) + ' · 文档 ID：' + doc.id + '</span></div>';
+    $('#kb-rule-foot').textContent = '来源文档：' + doc.name;
+    $('#kb-rule-loading').style.display = '';
+    $('#kb-rule-content').style.display = 'none';
+    $('#kb-rule-empty').style.display = 'none';
+    $('#kb-rule-confirm').disabled = true;
+    ruleModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    if (ruleTimer) clearTimeout(ruleTimer);
+    ruleTimer = setTimeout(function () {
+      if (!window.RULE_STORE) {
+        $('#kb-rule-loading').style.display = 'none';
+        $('#kb-rule-empty').style.display = '';
+        $('#kb-rule-empty').innerHTML = '规则库服务暂不可用，解析失败。<br>请稍后重试或联系系统管理员。';
+        return;
+      }
+      currentRuleList = buildParsedRules(doc);
+      $('#kb-rule-loading').style.display = 'none';
+      if (!currentRuleList.length) {
+        $('#kb-rule-empty').style.display = '';
+        $('#kb-rule-empty').innerHTML = '未从该文档中识别到可执行规则。<br>可尝试补充文档内容后重新解析。';
+        return;
+      }
+      $('#kb-rule-content').style.display = '';
+      renderParsedRules();
+    }, 900);
+  }
+
+  function closeRuleParse() {
+    if (ruleTimer) { clearTimeout(ruleTimer); ruleTimer = null; }
+    currentRuleDoc = null;
+    currentRuleList = [];
+    if (ruleModal) ruleModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  function confirmRuleParse() {
+    if (!currentRuleDoc) return;
+    var selected = currentRuleList.filter(function (r) { return r.selected && !r.duplicate; });
+    if (!selected.length) {
+      toast(currentRuleList.some(function (r) { return r.selected && r.duplicate; }) ? '选中的规则均已存在于规则库' : '请至少选择一条规则');
+      return;
+    }
+    var doc = currentRuleDoc;
+    selected.forEach(function (r, i) {
+      window.RULE_STORE.add({
+        id: 'kb-' + doc.id + '-' + Date.now() + '-' + i,
+        name: r.name, ver: 'v1.0', on: true,
+        trigger: r.trigger, freq: '0 次', last: '—',
+        conds: r.conds, acts: r.acts, expr: r.expr,
+        source: '知识库文档', clause: 'AI 解析',
+        sourceDocId: doc.id, sourceDocName: doc.name, sourceDocTab: doc.tab,
+        sourceDocUrl: 'knowledge-base.html#doc-' + doc.id
+      });
+    });
+    closeRuleParse();
+    toast('已加入规则库 ' + selected.length + ' 条，来源：' + doc.name);
+  }
+
+  if (ruleModal) {
+    ruleModal.addEventListener('click', function (e) { if (e.target === ruleModal) closeRuleParse(); });
+  }
+  $all('[data-kb-rule-close]').forEach(function (el) { el.addEventListener('click', closeRuleParse); });
+  $('#kb-rule-confirm').addEventListener('click', confirmRuleParse);
+  $('#kb-rule-check-all').addEventListener('click', function () {
+    var all = currentRuleList.length > 0 && currentRuleList.every(function (r) { return r.selected; });
+    currentRuleList.forEach(function (r) { r.selected = !all; });
+    updateRuleSelection();
+  });
+  $('#kb-rule-list').addEventListener('click', function (e) {
+    var item = e.target.closest('[data-rule-index]');
+    if (!item) return;
+    var i = +item.getAttribute('data-rule-index');
+    currentRuleList[i].selected = !currentRuleList[i].selected;
+    updateRuleSelection();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && ruleModal && ruleModal.classList.contains('show')) closeRuleParse();
+  });
+
+  function openDocById(id) {
+    var m = /^(.*)-(\d+)$/.exec(id);
+    if (!m) return;
+    var tab = m[1], idx = +m[2];
+    var list = DOC_DATA[tab];
+    if (!list || !list[idx]) return;
+    setView('docs');
+    $('#kb-doc-title').textContent = '生物样本库知识库';
+    $all('#kb-folder-tabs .tab').forEach(function (t) {
+      t.classList.toggle('active', t.getAttribute('data-kb-doc') === tab);
+    });
+    renderDocs(tab);
+    setTimeout(function () {
+      var row = document.querySelector('#kb-doc-body [data-doc-id="' + id + '"]');
+      if (row) {
+        row.classList.add('kb-doc-row-highlight');
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }, 120);
+  }
+
   function applyHash() {
     var h = (location.hash || '').replace('#', '');
+    if (h.indexOf('doc-') === 0) { openDocById(h.slice(4)); return; }
     if (h === 'parse') { openParse(); return; }
     if (LIFE[h]) { setView('lifecycle'); openLife(h); return; }
     if (['manage', 'docs', 'viz', 'lifecycle'].indexOf(h) > -1) setView(h);
   }
   window.addEventListener('hashchange', applyHash);
-  applyHash();
-
   renderDocs('all');
+  applyHash();
 })();
 </script>
 </body>
