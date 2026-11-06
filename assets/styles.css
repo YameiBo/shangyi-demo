@@ -99,7 +99,7 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 10px;
   padding: 14px 12px;
   border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
@@ -120,8 +120,18 @@ ul { list-style: none; }
   flex-shrink: 0;
 }
 
+.sidebar-brand-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-brand-icon svg { display: block; }
+
 .sidebar-title {
-  flex: 1;
+  flex: 0 0 auto;
   font-size: 20px;
   font-weight: 600;
   line-height: 1.2;
