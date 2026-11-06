@@ -100,6 +100,29 @@
   .dq-task-mini:last-child { border-bottom: none; }
   .dq-task-mini span { color: var(--text-tertiary); }
   @media (max-width: 800px) { .dq-modal-kv, .dq-diff { grid-template-columns: 1fr; } }
+  .dq-device-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 1200px) { .dq-device-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 800px) { .dq-device-grid { grid-template-columns: 1fr; } }
+  .dq-device-card { background: #fff; border: 1px solid var(--border-light); border-radius: 10px; padding: 14px 16px; }
+  .dq-device-card.alert { border-color: #FFC9BE; box-shadow: 0 0 0 2px rgba(245,63,63,.06); }
+  .dq-device-card .dq-device-head { display: flex; align-items: center; gap: 8px; }
+  .dq-device-card .dq-device-head b { font-size: 13.5px; color: var(--text-primary); }
+  .dq-device-card .dq-device-head .tag { margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+  .dq-device-metric { display: flex; align-items: flex-end; gap: 6px; margin-top: 10px; }
+  .dq-device-metric b { font-size: 23px; line-height: 1.15; }
+  .dq-device-metric span { font-size: 11.5px; color: var(--text-tertiary); }
+  .dq-device-meta { margin-top: 7px; font-size: 11.5px; color: var(--text-tertiary); line-height: 1.6; }
+  .dq-device-health { margin-top: 9px; }
+  .dq-device-health .progress { height: 6px; }
+  .dq-device-empty { padding: 48px 24px; text-align: center; }
+  .dq-device-empty b { display: block; margin: 10px 0 6px; font-size: 16px; }
+  .dq-device-empty p { margin: 0 auto; max-width: 460px; color: var(--text-tertiary); font-size: 13px; line-height: 1.8; }
+  .dq-device-feedback { display: none; margin-bottom: 14px; padding: 10px 12px; border: 1px solid #B8F0C2; border-radius: 8px; background: var(--success-bg); color: #00892A; font-size: 12.5px; line-height: 1.7; }
+  .dq-device-feedback.show { display: block; }
+  .dq-device-feedback.info { border-color: var(--primary-100); background: var(--primary-50); color: var(--primary-dark); }
+  .dq-device-checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dq-device-check { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; font-size: 12.5px; color: var(--text-secondary); }
+  .dq-device-check input { accent-color: var(--primary); }
 </style>
 </head>
 <body data-no-review-bar="1">
@@ -170,6 +193,7 @@
       <div class="tabs dq-main-tabs" id="dq-main-tabs">
         <div class="tab active" data-dq-view="samples">样本质控</div>
         <div class="tab" data-dq-view="governance">质控治理</div>
+        <div class="tab" data-dq-view="devices">设备预警</div>
       </div>
 
       <!-- ============ 样本列表（2026-10-07） ============ -->
@@ -586,17 +610,18 @@
             </div>
             <div class="dq-gov-grid-2 dq-wide-left">
               <div class="card" style="padding:0; overflow:hidden;">
-                <div class="card-header" style="padding:16px 18px 0;"><div class="card-title">💡 智能质控建议</div><span class="tag tag-primary">可解释决策</span></div>
+                <div class="card-header" style="padding:16px 18px 0;"><div class="card-title">💡 智能质控建议</div><div style="display:flex; align-items:center; gap:8px;"><span class="tag tag-primary">可解释决策</span><button class="btn btn-sm" id="dq-regen-suggestions">↻ 重新生成</button></div></div>
                 <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
                   <table class="table">
                     <thead><tr><th>样本 / 批次</th><th style="width:70px;">风险</th><th>证据链</th><th>建议</th><th style="width:70px;">置信度</th><th class="col-actions" style="width:82px;">操作</th></tr></thead>
-                    <tbody>
+                    <tbody id="dq-suggestion-body">
                       <tr><td><strong>S-20241128-013</strong></td><td><span class="tag tag-error">高</span></td><td>温度 -58.2℃ + ULT-03 校准逾期 + 同批次 18 条</td><td>暂停该批次分发，核查设备校准</td><td>96%</td><td class="col-actions"><button class="btn-text" data-dq-evidence="0">查看依据</button></td></tr>
                       <tr><td><strong>B-20241128-03</strong></td><td><span class="tag tag-warning">中</span></td><td>伦理批件缺失 + 知情同意未关联</td><td>冻结入库，补齐伦理材料</td><td>93%</td><td class="col-actions"><button class="btn-text" data-dq-evidence="1">查看依据</button></td></tr>
                       <tr><td><strong>S-20241201-071</strong></td><td><span class="tag tag-warning">中</span></td><td>分装量 0.27mL &lt; 0.3mL + 下游蛋白组需求</td><td>标记低量并通知下游</td><td>89%</td><td class="col-actions"><button class="btn-text" data-dq-evidence="2">查看依据</button></td></tr>
                     </tbody>
                   </table>
                 </div>
+                <div id="dq-suggestion-note" style="padding:0 18px 12px; font-size:11.5px; color:var(--text-tertiary);">最近生成：2026-11-06 14:20 · 已融合知识图谱与规则库</div>
               </div>
               <div class="card">
                 <div class="card-header" style="margin-bottom:10px;"><div class="card-title">📚 决策依据</div><span class="tag tag-default">6 条</span></div>
@@ -781,6 +806,75 @@
                   <div class="dq-suggest-item warn"><b>知情同意管理规程 · 补充撤回条款</b><span>增加供者撤回样本及数据储存和使用的权利说明，明确撤回流程与留痕要求（7.7.8）。</span></div>
                 </div>
                 <button class="btn btn-primary" id="dq-docs-task" style="width:100%; margin-top:12px; justify-content:center;">一键生成修订任务</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="dq-devices-view" style="display:none;">
+        <div class="pm-banner" style="background:var(--primary-50); border-color:var(--primary-100); color:var(--primary-dark); display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+          <span class="pm-banner-ico">📡</span>
+          <div style="flex:1; min-width:220px;"><strong>关键设备智能预警</strong> · 支持关键设备实时监测、异常自动提醒与闭环处理。<span id="dq-device-source">当前已接入 6 台关键设备。</span></div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-sm" id="dq-device-toggle">模拟断开数据</button>
+            <button class="btn btn-sm btn-primary" id="dq-device-simulate">模拟异常</button>
+          </div>
+        </div>
+        <div class="dq-device-feedback" id="dq-device-feedback"></div>
+        <div id="dq-device-disconnected" style="display:none;">
+          <div class="card dq-device-empty">
+            <div style="font-size:38px;">🔌</div>
+            <b>暂无设备数据接入</b>
+            <p>请接入关键设备数据（温度、液氮液位、转速、开门记录等），系统才能进行智能预警与异常自动提醒。</p>
+            <button class="btn btn-primary" id="dq-device-connect">接入设备数据</button>
+          </div>
+        </div>
+        <div id="dq-device-connected">
+          <div class="pm-stat-strip dq-gov-stats">
+            <span class="pm-stat-pill pm-pill-assigned"><span class="pm-dot"></span>关键设备 <i id="dq-device-total">6</i></span>
+            <span class="pm-stat-pill pm-pill-closed"><span class="pm-dot"></span>在线 <i id="dq-device-online">5</i></span>
+            <span class="pm-stat-pill pm-pill-doing"><span class="pm-dot"></span>异常预警 <i id="dq-device-alerts">2</i></span>
+            <span class="pm-stat-pill pm-pill-open"><span class="pm-dot"></span>已闭环 <i id="dq-device-closed">3</i></span>
+          </div>
+          <div class="dq-device-grid" id="dq-device-grid"></div>
+          <div class="card" style="margin-top:16px; padding:0; overflow:hidden;">
+            <div class="card-header" style="padding:16px 18px 0;">
+              <div class="card-title">⚠️ 异常自动提醒 <span class="tag tag-warning" id="dq-alarm-count">2 条待处理</span></div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-sm" id="dq-alarm-events">一键生成事件</button>
+                <button class="btn btn-sm" id="dq-alarm-refresh">刷新</button>
+              </div>
+            </div>
+            <div class="table-wrap" style="border:none; border-radius:0; margin-top:12px;">
+              <table class="table">
+                <thead><tr><th>设备</th><th style="width:84px;">指标</th><th style="width:92px;">异常值</th><th style="width:110px;">阈值</th><th style="width:140px;">触发时间</th><th style="width:70px;">级别</th><th style="width:82px;">状态</th><th class="col-actions" style="width:132px;">操作</th></tr></thead>
+                <tbody id="dq-alarm-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="grid grid-2" style="margin-top:16px;">
+            <div class="card">
+              <div class="card-header"><div class="card-title">闭环处理流程</div><span class="tag tag-primary">自动提醒</span></div>
+              <div class="dq-task-flow">
+                <div class="dq-flow-step done"><b>异常触发</b><span>传感器超阈值</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step current"><b>自动提醒</b><span>推送设备负责人</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step"><b>派发处置</b><span>生成质控任务</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step"><b>处置验证</b><span>复核处理结果</span></div>
+                <div class="dq-flow-arrow">→</div>
+                <div class="dq-flow-step"><b>关闭归档</b><span>写入审计记录</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">设备数据接入</div><span class="tag tag-success">已连接</span></div>
+              <div class="dq-modal-kv" style="padding:0 18px 14px;">
+                <div class="item"><span>网关</span><b>GW-01</b></div>
+                <div class="item"><span>协议</span><b>MQTT</b></div>
+                <div class="item"><span>采集频率</span><b>实时</b></div>
+                <div class="item"><span>最近同步</span><b>2026-11-06 14:20</b></div>
               </div>
             </div>
           </div>
@@ -1526,6 +1620,7 @@
      ========================================================== */
   var dqMainTabs = document.getElementById('dq-main-tabs');
   var dqGovView = document.getElementById('dq-governance-view');
+  var dqDevicesView = document.getElementById('dq-devices-view');
   var dqSampleView = document.getElementById('dq-samples-view');
   var dqWorkspaceView = document.getElementById('dq-workspace-view');
   var dqPageActions = document.querySelector('.page-actions');
@@ -1540,10 +1635,20 @@
       dqSampleMode = (dqWorkspaceView && dqWorkspaceView.style.display !== 'none') ? 'workspace' : 'samples';
       if (dqSampleView) dqSampleView.style.display = 'none';
       if (dqWorkspaceView) dqWorkspaceView.style.display = 'none';
+      if (dqDevicesView) dqDevicesView.style.display = 'none';
       dqGovView.style.display = '';
       if (dqPageActions) dqPageActions.style.display = 'none';
+    } else if (name === 'devices') {
+      dqSampleMode = (dqWorkspaceView && dqWorkspaceView.style.display !== 'none') ? 'workspace' : 'samples';
+      if (dqSampleView) dqSampleView.style.display = 'none';
+      if (dqWorkspaceView) dqWorkspaceView.style.display = 'none';
+      if (dqGovView) dqGovView.style.display = 'none';
+      if (dqDevicesView) dqDevicesView.style.display = '';
+      if (dqPageActions) dqPageActions.style.display = 'none';
+      renderDevices();
     } else {
-      dqGovView.style.display = 'none';
+      if (dqGovView) dqGovView.style.display = 'none';
+      if (dqDevicesView) dqDevicesView.style.display = 'none';
       if (dqSampleMode === 'workspace') {
         if (dqSampleView) dqSampleView.style.display = 'none';
         if (dqWorkspaceView) dqWorkspaceView.style.display = '';
@@ -2162,7 +2267,239 @@
     if (r) openDocRevise(+r.getAttribute('data-dq-doc-revise'));
   });
 
-  var DQ_TASKS = {
+  var DQ_SUGGESTIONS = [
+    { id: 'S-20241128-013', risk: '高', cls: 'tag-error', chain: '温度 -58.2℃ + ULT-03 校准逾期 + 同批次 18 条', suggestion: '暂停该批次分发，核查设备校准', confidence: 96, evidence: 0 },
+    { id: 'B-20241128-03', risk: '中', cls: 'tag-warning', chain: '伦理批件缺失 + 知情同意未关联', suggestion: '冻结入库，补齐伦理材料', confidence: 93, evidence: 1 },
+    { id: 'S-20241201-071', risk: '中', cls: 'tag-warning', chain: '分装量 0.27mL < 0.3mL + 下游蛋白组需求', suggestion: '标记低量并通知下游', confidence: 89, evidence: 2 }
+  ];
+
+  function renderSuggestions(regen) {
+    var body = document.getElementById('dq-suggestion-body');
+    if (!body) return;
+    var list = DQ_SUGGESTIONS.slice();
+    if (regen) {
+      list.push(list.shift());
+      list = list.map(function (x, i) {
+        var delta = ((Date.now() + i * 3) % 5) - 2;
+        return Object.assign({}, x, { confidence: Math.max(85, Math.min(98, x.confidence + delta)) });
+      });
+    }
+    body.innerHTML = list.map(function (x) {
+      return '<tr><td><strong>' + x.id + '</strong></td><td><span class="tag ' + x.cls + '">' + x.risk + '</span></td><td>' + x.chain + '</td><td>' + x.suggestion + '</td><td>' + x.confidence + '%</td><td class="col-actions"><button class="btn-text" data-dq-evidence="' + x.evidence + '">查看依据</button></td></tr>';
+    }).join('');
+    var note = document.getElementById('dq-suggestion-note');
+    if (note) note.textContent = '最近生成：' + dqNow() + ' · 已重新运行知识图谱融合、28 条国标规则与历史质控匹配';
+  }
+
+  var regenBtn = document.getElementById('dq-regen-suggestions');
+  if (regenBtn) {
+    regenBtn.addEventListener('click', function () {
+      regenBtn.disabled = true;
+      regenBtn.textContent = '生成中…';
+      setTimeout(function () {
+        renderSuggestions(true);
+        regenBtn.disabled = false;
+        regenBtn.textContent = '↻ 重新生成';
+      }, 450);
+    });
+  }
+  renderSuggestions(false);
+
+  var DQ_DEVICES = [
+    { id: 'ULT-03', name: '-80℃ 超低温冰箱', metric: '温度', value: '-58.2℃', threshold: '-80℃±2℃', status: '预警', cls: 'tag-error', updated: '2026-11-06 14:20', health: 72 },
+    { id: 'ULT-05', name: '-80℃ 超低温冰箱', metric: '温度', value: '-79.4℃', threshold: '-80℃±2℃', status: '在线', cls: 'tag-success', updated: '2026-11-06 14:20', health: 96 },
+    { id: 'LN-02', name: '液氮罐', metric: '液位', value: '28%', threshold: '≥30%', status: '预警', cls: 'tag-warning', updated: '2026-11-06 14:18', health: 65 },
+    { id: 'CENT-01', name: '高速离心机', metric: '转速', value: '12,000 rpm', threshold: '≤13,000 rpm', status: '在线', cls: 'tag-success', updated: '2026-11-06 14:19', health: 94 },
+    { id: 'INC-01', name: '恒温培养箱', metric: '温度', value: '37.1℃', threshold: '37±0.5℃', status: '在线', cls: 'tag-success', updated: '2026-11-06 14:20', health: 98 },
+    { id: 'RFID-01', name: 'RFID 门禁 / 开门记录', metric: '开门时长', value: '正常', threshold: '≤5 min', status: '离线', cls: 'tag-default', updated: '2026-11-06 12:40', health: 0 }
+  ];
+
+  var DQ_ALARMS = [
+    { id: 'ALM-20261106-001', device: 'ULT-03', metric: '温度', value: '-58.2℃', threshold: '-80℃±2℃', time: '2026-11-06 14:18', level: '高', levelCls: 'tag-error', status: '待处理', advise: '暂停该批次分发，核查 ULT-03 校准状态与温度探头', eventCreated: false },
+    { id: 'ALM-20261106-002', device: 'LN-02', metric: '液位', value: '28%', threshold: '≥30%', time: '2026-11-06 13:52', level: '中', levelCls: 'tag-warning', status: '待处理', advise: '安排补液并核对液位传感器', eventCreated: false },
+    { id: 'ALM-20261105-003', device: 'CENT-01', metric: '转速', value: '13,800 rpm', threshold: '≤13,000 rpm', time: '2026-11-05 10:12', level: '中', levelCls: 'tag-warning', status: '已闭环', advise: '已更换转子并完成校验', eventCreated: true },
+    { id: 'ALM-20261104-004', device: 'ULT-05', metric: '温度', value: '-76.2℃', threshold: '-80℃±2℃', time: '2026-11-04 09:40', level: '低', levelCls: 'tag-default', status: '已闭环', advise: '探头复位后恢复正常', eventCreated: true },
+    { id: 'ALM-20261103-005', device: 'INC-01', metric: '温度', value: '37.8℃', threshold: '37±0.5℃', time: '2026-11-03 16:05', level: '低', levelCls: 'tag-default', status: '已闭环', advise: '门体未闭合，已纠正', eventCreated: true }
+  ];
+
+  var DQ_DEVICE_CONNECTED = true;
+
+  function showDeviceFeedback(msg, type) {
+    var el = document.getElementById('dq-device-feedback');
+    if (!el) return;
+    el.className = 'dq-device-feedback show' + (type === 'info' ? ' info' : '');
+    el.textContent = msg;
+  }
+
+  function renderDevices() {
+    var connected = DQ_DEVICE_CONNECTED;
+    var dis = document.getElementById('dq-device-disconnected');
+    var conn = document.getElementById('dq-device-connected');
+    var source = document.getElementById('dq-device-source');
+    var toggle = document.getElementById('dq-device-toggle');
+    var sim = document.getElementById('dq-device-simulate');
+    if (dis) dis.style.display = connected ? 'none' : '';
+    if (conn) conn.style.display = connected ? '' : 'none';
+    if (source) source.textContent = connected ? '当前已接入 ' + DQ_DEVICES.length + ' 台关键设备。' : '当前未接入设备数据。';
+    if (toggle) toggle.textContent = connected ? '模拟断开数据' : '接入设备数据';
+    if (sim) sim.disabled = !connected;
+    if (!connected) return;
+
+    var grid = document.getElementById('dq-device-grid');
+    if (grid) {
+      grid.innerHTML = DQ_DEVICES.map(function (d) {
+        return '<div class="dq-device-card ' + (d.status === '预警' ? 'alert' : '') + '">' +
+          '<div class="dq-device-head"><b>' + d.id + '</b><span class="tag ' + d.cls + '">' + d.status + '</span></div>' +
+          '<div class="dq-device-meta">' + d.name + '</div>' +
+          '<div class="dq-device-metric"><b style="color:' + (d.status === '预警' ? 'var(--error)' : 'var(--text-primary)') + ';">' + d.value + '</b><span>' + d.metric + '（阈值 ' + d.threshold + '）</span></div>' +
+          '<div class="dq-device-meta">最近更新：' + d.updated + '</div>' +
+          '<div class="dq-device-health"><div class="progress"><div class="progress-bar ' + (d.health < 80 ? 'warning' : 'success') + '" style="width:' + d.health + '%"></div></div></div>' +
+          '</div>';
+      }).join('');
+    }
+
+    var pending = DQ_ALARMS.filter(function (a) { return a.status === '待处理'; }).length;
+    var closed = DQ_ALARMS.filter(function (a) { return a.status === '已闭环'; }).length;
+    var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+    set('dq-device-total', DQ_DEVICES.length);
+    set('dq-device-online', DQ_DEVICES.filter(function (d) { return d.status !== '离线'; }).length);
+    set('dq-device-alerts', pending);
+    set('dq-device-closed', closed);
+    set('dq-alarm-count', pending + ' 条待处理');
+
+    var body = document.getElementById('dq-alarm-body');
+    if (body) {
+      body.innerHTML = DQ_ALARMS.map(function (a) {
+        return '<tr><td><strong>' + a.device + '</strong></td><td>' + a.metric + '</td><td style="color:' + (a.status === '待处理' ? 'var(--error)' : 'var(--text-secondary)') + ';">' + a.value + '</td><td>' + a.threshold + '</td><td>' + a.time + '</td><td><span class="tag ' + a.levelCls + '">' + a.level + '</span></td><td><span class="tag ' + (a.status === '待处理' ? 'tag-warning' : 'tag-success') + '">' + a.status + '</span></td><td class="col-actions"><button class="btn-text" data-dq-alarm-view="' + a.id + '">查看</button>' + (a.status === '待处理' ? '<button class="btn-text" data-dq-alarm-handle="' + a.id + '">处理</button>' : '') + '</td></tr>';
+      }).join('');
+    }
+  }
+
+  function createDeviceEvent(a, closed) {
+    if (!window.EVENT_STORE) return;
+    window.EVENT_STORE.add({
+      id: 'EV-DEV-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      title: (closed ? '设备闭环 · ' : '设备异常 · ') + a.device + ' ' + a.metric,
+      type: '设备异常', pri: a.level === '高' ? '高' : '中', owner: '设备负责人', due: a.time.slice(0, 10) + ' 18:00',
+      progress: closed ? 100 : 20, status: closed ? 'closed' : 'assigned',
+      desc: a.device + ' ' + a.metric + ' ' + a.value + '（阈值 ' + a.threshold + '）；' + a.advise,
+      source: '样本数据质控 · 设备预警', clause: '6.5 / 7.7.3'
+    });
+  }
+
+  function openAlarmDetail(id) {
+    var a = DQ_ALARMS.filter(function (x) { return x.id === id; })[0];
+    if (!a) return;
+    var body = '<div class="pm-banner" style="background:' + (a.status === '待处理' ? 'var(--error-bg);border-color:#FFC9BE;color:#C4341F;' : 'var(--success-bg);border-color:#B8F0C2;color:#00892A;') + '"><span class="pm-banner-ico">' + (a.status === '待处理' ? '⚠' : '✓') + '</span><div><strong>' + a.status + '：</strong>' + a.device + ' ' + a.metric + '异常（' + a.value + '，阈值 ' + a.threshold + '），' + a.advise + '。</div></div>' +
+      '<div class="dq-modal-kv"><div class="item"><span>设备</span><b>' + a.device + '</b></div><div class="item"><span>指标</span><b>' + a.metric + '</b></div><div class="item"><span>异常值</span><b style="color:var(--error);">' + a.value + '</b></div><div class="item"><span>阈值</span><b>' + a.threshold + '</b></div><div class="item"><span>触发时间</span><b>' + a.time + '</b></div><div class="item"><span>级别</span><b><span class="tag ' + a.levelCls + '">' + a.level + '</span></b></div></div>' +
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">证据与影响</div>' +
+      '<div class="dq-evidence-list"><div class="dq-evidence-item"><b>传感器</b><span>' + a.device + ' 实时读数 ' + a.value + '，连续 3 个采样点超限</span></div><div class="dq-evidence-item"><b>影响范围</b><span>关联样本批次 18 条，需评估温度暴露时长</span></div><div class="dq-evidence-item"><b>建议动作</b><span>' + a.advise + '</span></div></div>' +
+      '<div class="dq-modal-note">系统已自动推送提醒至设备负责人；关闭异常前需完成处置与验证。</div>';
+    var pending = a.status === '待处理';
+    modal({ title: '设备异常详情 · ' + a.id, sub: a.device + ' · ' + a.metric, size: 'modal-lg', body: body,
+      footer: '<button class="btn" data-pm-close>关闭</button>' + (pending ? '<button class="btn" id="dq-alarm-create-event">生成事件</button><button class="btn btn-primary" id="dq-alarm-handle-go">处理异常</button>' : ''),
+      onMount: function (root) {
+        var ce = root.querySelector('#dq-alarm-create-event');
+        if (ce) ce.addEventListener('click', function () { createDeviceEvent(a, false); a.eventCreated = true; dqModalFeedback(root, '已生成设备异常事件，事件管控中心事项列表已同步。'); ce.disabled = true; ce.textContent = '已生成'; });
+        var hg = root.querySelector('#dq-alarm-handle-go');
+        if (hg) hg.addEventListener('click', function () { openAlarmHandle(a.id); });
+      }
+    });
+  }
+
+  function openAlarmHandle(id) {
+    var a = DQ_ALARMS.filter(function (x) { return x.id === id; })[0];
+    if (!a) return;
+    var body = '<div class="dq-modal-kv"><div class="item"><span>设备</span><b>' + a.device + '</b></div><div class="item"><span>异常</span><b>' + a.metric + ' ' + a.value + '</b></div><div class="item"><span>触发时间</span><b>' + a.time + '</b></div><div class="item"><span>建议</span><b>' + a.advise + '</b></div></div>' +
+      '<div class="dq-plan-form"><div><label>原因分析</label><select id="dq-handle-cause"><option>温度探头漂移</option><option>设备校准逾期</option><option>门体未闭合</option><option>其他</option></select></div><div><label>处理结果</label><select id="dq-handle-result"><option>已恢复正常</option><option>已更换部件</option><option>需进一步维修</option></select></div><div style="grid-column:1/-1;"><label>处置措施</label><textarea class="input" id="dq-handle-note" rows="3" style="height:auto;padding:8px 12px;">已核查设备运行状态，完成探头复位与环境复核。</textarea></div><div style="grid-column:1/-1;"><label>证据附件</label><input class="input" value="设备运行曲线 / 校准证书 / 处理照片" readonly /></div></div>';
+    modal({ title: '设备异常闭环处理 · ' + a.device, sub: a.id, size: 'modal-lg', body: body,
+      footer: '<button class="btn" data-pm-close>取消</button><button class="btn btn-primary" id="dq-handle-confirm">提交闭环</button>',
+      onMount: function (root) {
+        root.querySelector('#dq-handle-confirm').addEventListener('click', function () {
+          a.status = '已闭环';
+          createDeviceEvent(a, true);
+          renderDevices();
+          dqModalFeedback(root, '已完成闭环处理，事件管控中心已记录闭环结果。');
+          var b = root.querySelector('#dq-handle-confirm');
+          if (b) { b.disabled = true; b.textContent = '已闭环'; }
+        });
+      }
+    });
+  }
+
+  function openDeviceConnect() {
+    var body = '<div class="dq-plan-form"><div><label>设备网关</label><select id="dq-device-gw"><option>GW-01（主网关）</option><option>GW-02（备用网关）</option></select></div><div><label>接入协议</label><select id="dq-device-proto"><option>MQTT</option><option>Modbus TCP</option><option>OPC UA</option></select></div><div><label>采集频率</label><select id="dq-device-freq"><option>实时</option><option>每 5 分钟</option><option>每 15 分钟</option></select></div><div><label>数据范围</label><input class="input" value="温度 / 液位 / 转速 / 开门记录" readonly /></div></div>' +
+      '<div style="font-size:12px; color:var(--text-tertiary); margin:12px 0 6px;">选择要接入的关键设备</div>' +
+      '<div class="dq-device-checks">' + DQ_DEVICES.map(function (d) { return '<label class="dq-device-check"><input type="checkbox" value="' + d.id + '" checked>' + d.id + ' · ' + d.name + '</label>'; }).join('') + '</div>' +
+      '<div class="dq-modal-note">接入后系统将持续采集设备数据，命中阈值时自动推送提醒并生成异常记录。</div>';
+    modal({ title: '接入设备数据', sub: '关键设备智能预警数据源', size: 'modal-lg', body: body,
+      footer: '<button class="btn" data-pm-close>取消</button><button class="btn btn-primary" id="dq-connect-confirm">接入设备数据</button>',
+      onMount: function (root) {
+        root.querySelector('#dq-connect-confirm').addEventListener('click', function () {
+          var picked = Array.prototype.slice.call(root.querySelectorAll('.dq-device-check input:checked')).length;
+          if (!picked) { dqModalFeedback(root, '请至少选择一台设备。', 'info'); return; }
+          DQ_DEVICE_CONNECTED = true;
+          renderDevices();
+          dqModalFeedback(root, '已接入 ' + picked + ' 台关键设备，设备数据采集已启动。');
+          var b = root.querySelector('#dq-connect-confirm');
+          if (b) { b.disabled = true; b.textContent = '已接入'; }
+        });
+      }
+    });
+  }
+
+  function simulateDeviceAlarm() {
+    if (!DQ_DEVICE_CONNECTED) { showDeviceFeedback('请先接入设备数据后再模拟异常。', 'info'); return; }
+    var isTemp = DQ_ALARMS.length % 2 === 0;
+    var a = {
+      id: 'ALM-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + String(new Date().getDate()).padStart(2, '0') + '-SIM',
+      device: isTemp ? 'ULT-03' : 'LN-02',
+      metric: isTemp ? '温度' : '液位',
+      value: isTemp ? '-56.8℃' : '26%',
+      threshold: isTemp ? '-80℃±2℃' : '≥30%',
+      time: dqNow(), level: isTemp ? '高' : '中', levelCls: isTemp ? 'tag-error' : 'tag-warning',
+      status: '待处理', advise: isTemp ? '暂停该批次分发，核查 ULT-03 校准状态与温度探头' : '安排补液并核对液位传感器', eventCreated: false
+    };
+    DQ_ALARMS.unshift(a);
+    if (window.REMINDER_STORE) {
+      window.REMINDER_STORE.add({
+        id: 'RM-DEV-' + Date.now(), title: '设备异常自动提醒 · ' + a.device + ' ' + a.metric,
+        type: '设备', owner: '设备负责人', time: dqNow(), level: 'critical', read: false,
+        desc: a.device + ' ' + a.metric + ' ' + a.value + ' 超出阈值 ' + a.threshold + '，请及时处理'
+      });
+    }
+    renderDevices();
+    showDeviceFeedback('已自动触发异常提醒：' + a.device + ' ' + a.metric + '超限，事件管控中心「提醒事项」已同步。');
+  }
+
+  document.getElementById('dq-device-toggle').addEventListener('click', function () {
+    if (DQ_DEVICE_CONNECTED) {
+      DQ_DEVICE_CONNECTED = false;
+      renderDevices();
+      showDeviceFeedback('已模拟断开设备数据，请重新接入。', 'info');
+    } else {
+      openDeviceConnect();
+    }
+  });
+  document.getElementById('dq-device-simulate').addEventListener('click', simulateDeviceAlarm);
+  document.getElementById('dq-device-connect').addEventListener('click', openDeviceConnect);
+  document.getElementById('dq-alarm-refresh').addEventListener('click', function () { renderDevices(); showDeviceFeedback('已刷新设备状态与告警。', 'info'); });
+  document.getElementById('dq-alarm-events').addEventListener('click', function () {
+    var pending = DQ_ALARMS.filter(function (a) { return a.status === '待处理' && !a.eventCreated; });
+    if (!pending.length) { showDeviceFeedback('当前没有待生成的设备异常事件。', 'info'); return; }
+    pending.forEach(function (a) { createDeviceEvent(a, false); a.eventCreated = true; });
+    showDeviceFeedback('已为 ' + pending.length + ' 条异常生成事件，事件管控中心事项列表已同步。');
+  });
+  document.getElementById('dq-alarm-body').addEventListener('click', function (e) {
+    var v = e.target.closest('[data-dq-alarm-view]');
+    var h = e.target.closest('[data-dq-alarm-handle]');
+    if (v) openAlarmDetail(v.getAttribute('data-dq-alarm-view'));
+    if (h) openAlarmHandle(h.getAttribute('data-dq-alarm-handle'));
+  });
+  renderDevices();
+
+
+    var DQ_TASKS = {
     'QC-20241201-018': {
       name: '储存温度异常批次核查', source: '规则命中', owner: '孙七', due: '2024-12-02 18:00', status: '进行中',
       desc: 'S-20241128-013 等 18 条记录温度超出 -80℃±2℃ 范围，需核查 ULT-03 校准状态并评估受影响批次。',
@@ -2295,6 +2632,7 @@
   function dqApplyHash() {
     var h = (location.hash || '').replace('#', '');
     if (h === 'governance') { dqSetMainView('governance'); return; }
+    if (h === 'devices') { dqSetMainView('devices'); return; }
     if (h.indexOf('gov-') === 0) {
       dqSetMainView('governance');
       var tab = document.querySelector('#dq-gov-tabs [data-dq-gov="' + h.slice(4) + '"]');
