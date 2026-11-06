@@ -3018,6 +3018,90 @@ function downloadText(filename, text) {
   setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
 }
 
+window.demoDownloadFile = function (filename, content, mime) {
+  var blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+};
+
+(function () {
+  var skipActions = { 'report-export': 1, 'arc-export': 1, 'history-download': 1, 'history-export': 1 };
+  function stamp() {
+    var d = new Date();
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return '' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
+  }
+  function sanitize(s) {
+    return String(s || '导出').replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').slice(0, 80);
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function collectRows(btn) {
+    var modal = btn.closest('.modal');
+    var scope = modal || document;
+    var table = scope.querySelector('table.table');
+    if (!table) return [];
+    var rows = [];
+    var heads = table.querySelectorAll('thead th');
+    if (heads.length) rows.push(Array.prototype.map.call(heads, function (h) { return h.textContent.trim(); }));
+    table.querySelectorAll('tbody tr').forEach(function (tr) {
+      rows.push(Array.prototype.map.call(tr.querySelectorAll('td'), function (td) { return td.textContent.replace(/\s+/g, ' ').trim(); }));
+    });
+    return rows.slice(0, 300);
+  }
+  function toCsv(rows) {
+    return rows.map(function (r) {
+      return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\n');
+  }
+  function toHtmlTable(rows) {
+    if (!rows.length) return '';
+    return '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px;">' +
+      rows.map(function (r, i) {
+        return '<tr>' + r.map(function (c) { return (i === 0 ? '<th>' : '<td>') + escapeHtml(c) + (i === 0 ? '</th>' : '</td>'); }).join('') + '</tr>';
+      }).join('') + '</table>';
+  }
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (!btn || btn.disabled) return;
+    if (btn.classList.contains('perm-denied') || btn.getAttribute('aria-disabled') === 'true') return;
+    if (btn.id === 'vcmp-export' || btn.id === 'kb-life-action') return;
+    if (btn.hasAttribute('data-no-download')) return;
+    var act = btn.getAttribute('data-action');
+    if (act && skipActions[act]) return;
+    var text = (btn.textContent || '').replace(/\s+/g, '');
+    if (!/导出|下载/.test(text)) return;
+    var rows = collectRows(btn);
+    var isWord = /word/i.test(text);
+    var isPdf = /pdf/i.test(text);
+    var isJson = /模板|json/i.test(text);
+    var ext = isWord ? 'doc' : (isPdf ? 'txt' : (isJson ? 'json' : 'csv'));
+    var title = (document.title || 'demo').split(' - ')[0].trim();
+    var body;
+    var mime;
+    if (isWord) {
+      body = '<html><head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title></head><body><h2>' + escapeHtml(title) + ' · ' + escapeHtml(text) + '</h2>' + toHtmlTable(rows) + '<p style="margin-top:16px;color:#86909C;font-size:12px;">由上医科研样本库信息化平台导出（演示数据）</p></body></html>';
+      mime = 'application/msword;charset=utf-8';
+    } else if (isJson) {
+      body = JSON.stringify({ page: title, action: text, exportedAt: new Date().toISOString(), rows: rows }, null, 2);
+      mime = 'application/json;charset=utf-8';
+    } else {
+      var lines = rows.length ? rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }) : ['"页面","操作","导出时间"', '"' + title + '","' + text + '","' + new Date().toLocaleString('zh-CN', { hour12: false }) + '"'];
+      body = '\ufeff' + lines.join('\n');
+      mime = isPdf ? 'text/plain;charset=utf-8' : 'text/csv;charset=utf-8';
+    }
+    var filename = sanitize(title + '_' + text) + '_' + stamp() + '.' + ext;
+    window.demoDownloadFile(filename, body, mime);
+  }, true);
+})();
+
 /* ---------- 确认框（可叠在弹窗之上） ---------- */
 function ensureConfirmRoot() {
   var el = document.getElementById('confirm-root');

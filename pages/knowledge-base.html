@@ -1520,6 +1520,12 @@
       var sec = secs[meta.section];
       if (sec) { var tr = sec.querySelector('tbody tr'); if (tr) tr.classList.add('kb-life-row-new'); }
     }, 40);
+    if (key === 'audit' && window.demoDownloadFile) {
+      var sec = LIFE.audit.sections[1];
+      var csvCell = function (v) { return '"' + String(v).replace(/<[^>]+>/g, '').replace(/"/g, '""') + '"'; };
+      var lines = [sec.headers.map(csvCell).join(',')].concat(sec.rows.map(function (r) { return r.map(csvCell).join(','); }));
+      window.demoDownloadFile('知识库审计日志_' + nowStamp().replace(/[^0-9]/g, '') + '.csv', '\ufeff' + lines.join('\n'), 'text/csv;charset=utf-8');
+    }
     closeLifeAction();
     toast(meta.title + '已完成，任务已写入「' + LIFE[key].title + '」环节');
   }
