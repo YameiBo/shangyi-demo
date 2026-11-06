@@ -102,6 +102,7 @@ ul { list-style: none; }
   padding: 14px 12px;
   border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
+  position: relative;
 }
 
 .sidebar-logo {
@@ -119,16 +120,22 @@ ul { list-style: none; }
 }
 
 .sidebar-title {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--text-primary);
   letter-spacing: 0;
   white-space: nowrap;
+  flex: 1;
+  text-align: center;
 }
 
 .sidebar-collapse-btn {
-  margin-left: auto;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
   color: var(--text-tertiary);
   font-size: 18px;
   padding: 4px;
