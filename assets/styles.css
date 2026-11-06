@@ -1873,6 +1873,9 @@ tbody tr.selected:hover { background: var(--primary-light); }
 .bell-more { color: var(--primary); font-weight: 600; text-decoration: none; }
 .bell-more:hover { text-decoration: underline; }
 
+/* ===== 隐藏迎检智能体挂件 ===== */
+#aw { display: none !important; }
+
 /* ===== 事件管控中心 · 我的提醒事项（2026-10-28）===== */
 .ec-remind-item { position: relative; }
 .ec-remind-item.unread { background: var(--bg-page); border-radius: 6px; }
