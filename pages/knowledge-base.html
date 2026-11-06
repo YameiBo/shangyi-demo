@@ -213,6 +213,16 @@
   .kb-rule-item > .tag { flex-shrink: 0; margin-top: 2px; }
   .kb-rule-note { margin-top: 10px; font-size: 11.5px; color: var(--text-tertiary); line-height: 1.7; }
   .kb-rule-empty { padding: 36px 20px; text-align: center; color: var(--text-tertiary); font-size: 13px; line-height: 1.8; }
+  .kb-action-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .kb-action-field label { display: block; font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 5px; }
+  .kb-action-field input[type="text"], .kb-action-field input[type="number"], .kb-action-field select { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 6px; padding: 0 9px; background: #fff; font-size: 12.5px; color: var(--text-primary); }
+  .kb-action-field.full { grid-column: 1 / -1; }
+  .kb-action-checks { display: flex; flex-direction: column; gap: 6px; }
+  .kb-action-check { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; font-size: 12.5px; color: var(--text-secondary); cursor: pointer; }
+  .kb-action-check input { accent-color: var(--primary); }
+  .kb-action-hint { padding: 10px 12px; border-radius: 8px; background: var(--primary-50); color: var(--primary-dark); font-size: 12px; line-height: 1.7; }
+  .kb-action-result { margin-top: 12px; padding: 10px 12px; border: 1px solid #B8F0C2; border-radius: 8px; background: var(--success-bg); color: #00892A; font-size: 12.5px; line-height: 1.7; }
+  .kb-life-row-new td { background: var(--warning-bg) !important; }
 </style>
 </head>
 <body data-no-review-bar="1">
@@ -678,6 +688,24 @@
       <span class="kb-modal-footer-note" id="kb-life-foot"></span>
       <button class="btn" type="button" data-kb-close>关闭</button>
       <button class="btn btn-primary" type="button" id="kb-life-action"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="kb-action-modal">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="kb-action-title">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="kb-action-title">新建采集任务</div>
+        <div class="modal-subtitle" id="kb-action-sub"></div>
+      </div>
+      <button class="modal-close" type="button" data-kb-action-close aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body" id="kb-action-body"></div>
+    <div class="modal-footer">
+      <span class="kb-modal-footer-note" id="kb-action-foot">操作结果将写入对应环节任务列表</span>
+      <button class="btn" type="button" data-kb-action-close>取消</button>
+      <button class="btn btn-primary" type="button" id="kb-action-confirm">确认执行</button>
     </div>
   </div>
 </div>
@@ -1266,6 +1294,7 @@
   }
 
   function openLife(key) {
+    currentLifeKey = key;
     renderLife(key);
     var m = $('#kb-life-modal');
     if (!m) return;
@@ -1277,6 +1306,7 @@
     var m = $('#kb-life-modal');
     if (!m) return;
     m.classList.remove('show');
+    if (lifeActionModal) lifeActionModal.classList.remove('show');
     document.body.style.overflow = '';
   }
 
@@ -1301,14 +1331,209 @@
     });
   }
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeLife();
+    if (e.key !== 'Escape') return;
+    if (lifeActionModal && lifeActionModal.classList.contains('show')) { closeLifeAction(); return; }
+    closeLife();
   });
+  function shortStamp() {
+    var d = new Date();
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return '' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+  }
+  function nowStamp() {
+    var d = new Date();
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  var LIFE_ACTIONS = {
+    collect: {
+      title: '新建采集任务', sub: '从数据源采集新文档，任务将写入「最近采集任务」',
+      hint: '采集任务会自动去重并进入清洗队列；完成后可在任务列表中查看。',
+      fields: [
+        { id: 'src', label: '数据源', type: 'select', options: ['法规政策库', 'CNAS 标准库', '内部质量体系', '文献数据库', '专家共识库'] },
+        { id: 'count', label: '文档数量', type: 'number', value: '3' },
+        { id: 'owner', label: '负责人', type: 'select', options: ['王静', '李强', '赵敏'] },
+        { id: 'priority', label: '优先级', type: 'select', options: ['普通', '高'] }
+      ],
+      section: 1, stats: [[1, 1]],
+      row: function (v) { return ['COL-' + shortStamp(), v.src, v.count, nowStamp(), '<span class="tag tag-success">已完成</span>']; }
+    },
+    clean: {
+      title: '执行清洗', sub: '选择清洗规则并生成清洗任务',
+      hint: '清洗结果不会直接改写原始文档，异常文档会保留原文件并记录审计。',
+      fields: [
+        { id: 'rules', label: '清洗规则', type: 'checks', full: true, checked: true, options: ['格式归一', 'OCR 识别', '去重校验', '敏感信息脱敏'] },
+        { id: 'owner', label: '执行人', type: 'select', options: ['李强', '王静', '赵敏'] }
+      ],
+      section: 1, stats: [[0, -1], [1, 1]],
+      row: function (v) { return ['批量清洗任务', '已选 ' + v.rules.length + ' 项规则：' + v.rules.join(' / '), '由 ' + v.owner + ' 执行', '<span class="tag tag-success">已处理</span>']; }
+    },
+    annotate: {
+      title: '继续标注', sub: '选择待标注文档并继续实体 / 条款标注',
+      hint: '标注完成后自动进入双人复核；支持多人分工与冲突检测。',
+      fields: [
+        { id: 'docs', label: '待标注文档', type: 'checks', full: true, checked: true, options: ['GB/T 37864-2019 生物样本库质量和能力通用要求.pdf', '生物样本库伦理审查指南.pdf', 'ISBER Best Practices (2018).pdf'] },
+        { id: 'owner', label: '标注人', type: 'select', options: ['赵敏', '王静', '李强'] }
+      ],
+      section: 0, stats: [[0, 1], [1, -1]],
+      row: function (v) { return [v.docs[0] + (v.docs.length > 1 ? ' 等 ' + v.docs.length + ' 篇' : ''), '条款 / 实体', String(v.docs.length * 12), v.owner, '<span class="tag tag-success">已标注</span>']; }
+    },
+    review: {
+      title: '进入审核', sub: '对待审核文档进行复核并给出结论',
+      hint: '双人独立复核；通过后进入发布队列，驳回则退回标注环节。',
+      fields: [
+        { id: 'result', label: '审核结论', type: 'radio', options: ['通过', '驳回'] },
+        { id: 'comment', label: '审核意见', type: 'text', value: '材料完整，符合要求' }
+      ],
+      section: 0, stats: function (v) { return [[0, -1], [1, v.result === '通过' ? 1 : 0], [2, v.result === '驳回' ? 1 : 0]]; },
+      row: function (v) { return ['生物样本库伦理审查指南', '赵敏', '陈洁', nowStamp(), v.result === '通过' ? '<span class="tag tag-success">已通过</span>' : '<span class="tag tag-error">已驳回</span>']; }
+    },
+    publish: {
+      title: '发布新版本', sub: '将已审核通过的文档发布到知识库',
+      hint: '发布后自动更新检索索引与目录，并写入发布审计日志。',
+      fields: [
+        { id: 'ver', label: '版本号', type: 'text', value: 'v2.5' },
+        { id: 'scope', label: '发布范围', type: 'select', options: ['生物样本库知识库 / 全部', '国家标准', '伦理审查 / 数据共享'] },
+        { id: 'publisher', label: '发布人', type: 'select', options: ['周涛', '陈洁'] }
+      ],
+      section: 0, stats: [[0, 1], [1, 1]],
+      row: function (v) { return [v.ver, v.scope, v.publisher, nowStamp(), '<span class="tag tag-success">已发布</span>']; }
+    },
+    update: {
+      title: '检查更新', sub: '检查标准与法规变更并生成更新任务',
+      hint: '命中的变更会生成更新任务并通知责任人，失效文档自动下架检索。',
+      fields: [
+        { id: 'items', label: '待确认变更', type: 'checks', full: true, checked: true, options: ['GB/T 37864-2019 修订征求意见', 'ISO 20387:2018 定期复审', '人类遗传资源管理条例 政策更新'] },
+        { id: 'owner', label: '负责人', type: 'select', options: ['陈洁', '周涛'] }
+      ],
+      section: 1, stats: [[1, -1]],
+      row: function (v) { return ['UPD-' + shortStamp(), v.items.join('、'), v.owner, '2026-11-10', '<span class="tag tag-success">已生成</span>']; }
+    },
+    archive: {
+      title: '新建归档批次', sub: '将历史版本与记录归档到冷备',
+      hint: '归档数据只读保存，支持按时间、知识库、责任人检索与恢复。',
+      fields: [
+        { id: 'batch', label: '批次号', type: 'text', value: 'ARC-' + shortStamp() },
+        { id: 'scope', label: '归档范围', type: 'select', options: ['历史版本', '审核记录', '发布记录', '全部'] },
+        { id: 'retention', label: '保留期', type: 'select', options: ['10 年', '5 年', '永久'] }
+      ],
+      section: 0, stats: [[0, 1], [2, 1]],
+      row: function (v) { return [v.batch, v.scope, nowStamp(), v.retention, '<span class="tag tag-success">已完成</span>']; }
+    },
+    audit: {
+      title: '导出审计日志', sub: '导出当前审计日志并记录导出行为',
+      hint: '所有查看、下载、编辑、发布、权限变更均会记录操作人、时间、对象与结果。',
+      fields: [
+        { id: 'range', label: '时间范围', type: 'select', options: ['近 7 天', '近 30 天', '全部'] },
+        { id: 'format', label: '导出格式', type: 'select', options: ['CSV', 'Excel', 'PDF'] }
+      ],
+      section: 1, stats: [[1, 1]],
+      row: function (v) { return [nowStamp(), '管理员', '导出审计日志', v.range + ' / ' + v.format, '<span class="tag tag-success">成功</span>']; }
+    }
+  };
+
+  var currentLifeKey = null;
+  var actionKey = null;
+  var lifeActionModal = $('#kb-action-modal');
+
+  function renderActionForm(meta) {
+    var html = '<div class="kb-action-hint">' + meta.hint + '</div><div class="kb-action-form" style="margin-top:12px;">';
+    meta.fields.forEach(function (f) {
+      html += '<div class="kb-action-field ' + (f.full ? 'full' : '') + '"><label>' + f.label + '</label>';
+      if (f.type === 'checks') {
+        html += '<div class="kb-action-checks" data-action-field="' + f.id + '">' + f.options.map(function (o) {
+          return '<label class="kb-action-check"><input type="checkbox" value="' + o + '"' + (f.checked ? ' checked' : '') + '>' + o + '</label>';
+        }).join('') + '</div>';
+      } else if (f.type === 'radio') {
+        html += '<div class="kb-action-checks" data-action-field="' + f.id + '" style="flex-direction:row;">' + f.options.map(function (o, i) {
+          return '<label class="kb-action-check"><input type="radio" name="' + f.id + '" value="' + o + '"' + (i === 0 ? ' checked' : '') + '>' + o + '</label>';
+        }).join('') + '</div>';
+      } else if (f.type === 'select') {
+        html += '<select data-action-field="' + f.id + '">' + f.options.map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select>';
+      } else {
+        html += '<input type="' + (f.type === 'number' ? 'number' : 'text') + '" data-action-field="' + f.id + '" value="' + (f.value || '') + '">';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function readActionValues(meta) {
+    var vals = {};
+    meta.fields.forEach(function (f) {
+      if (f.type === 'checks') {
+        vals[f.id] = $all('[data-action-field="' + f.id + '"] input:checked').map(function (x) { return x.value; });
+      } else if (f.type === 'radio') {
+        var r = $('[data-action-field="' + f.id + '"] input:checked');
+        vals[f.id] = r ? r.value : '';
+      } else {
+        var el = $('[data-action-field="' + f.id + '"]');
+        vals[f.id] = el ? el.value : '';
+      }
+    });
+    return vals;
+  }
+
+  function bumpLifeStat(key, idx, delta) {
+    var st = LIFE[key] && LIFE[key].stats[idx];
+    if (!st) return;
+    var raw = String(st[1]).replace(/,/g, '').replace(/[^\d.-]/g, '');
+    var n = parseFloat(raw);
+    if (isNaN(n)) return;
+    st[1] = String(n + delta);
+  }
+
+  function openLifeAction(key) {
+    var meta = LIFE_ACTIONS[key];
+    if (!meta || !lifeActionModal) return;
+    actionKey = key;
+    $('#kb-action-title').textContent = meta.title;
+    $('#kb-action-sub').textContent = meta.sub;
+    $('#kb-action-body').innerHTML = renderActionForm(meta);
+    lifeActionModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLifeAction() {
+    actionKey = null;
+    if (lifeActionModal) lifeActionModal.classList.remove('show');
+  }
+
+  function applyLifeAction() {
+    var key = actionKey;
+    var meta = LIFE_ACTIONS[key];
+    if (!meta) return;
+    var vals = readActionValues(meta);
+    for (var i = 0; i < meta.fields.length; i++) {
+      var f = meta.fields[i];
+      if (f.type === 'checks' && (!vals[f.id] || !vals[f.id].length)) { toast('请至少选择一项' + f.label); return; }
+      if (f.type === 'text' && !vals[f.id]) { toast('请填写' + f.label); return; }
+    }
+    LIFE[key].sections[meta.section].rows.unshift(meta.row(vals));
+    var stats = typeof meta.stats === 'function' ? meta.stats(vals) : meta.stats;
+    (stats || []).forEach(function (x) { bumpLifeStat(key, x[0], x[1]); });
+    renderLife(key);
+    setTimeout(function () {
+      var secs = $all('#kb-life-body .kb-modal-section');
+      var sec = secs[meta.section];
+      if (sec) { var tr = sec.querySelector('tbody tr'); if (tr) tr.classList.add('kb-life-row-new'); }
+    }, 40);
+    closeLifeAction();
+    toast(meta.title + '已完成，任务已写入「' + LIFE[key].title + '」环节');
+  }
+
+  if (lifeActionModal) {
+    lifeActionModal.addEventListener('click', function (e) { if (e.target === lifeActionModal) closeLifeAction(); });
+  }
+  $all('[data-kb-action-close]').forEach(function (el) { el.addEventListener('click', closeLifeAction); });
+  $('#kb-action-confirm').addEventListener('click', applyLifeAction);
+
   var lifeAction = $('#kb-life-action');
   if (lifeAction) {
     lifeAction.addEventListener('click', function () {
-      var key = lifeAction.getAttribute('data-kb-life-action');
-      var d = LIFE[key];
-      if (d) toast(d.action + '：演示操作已触发');
+      openLifeAction(lifeAction.getAttribute('data-kb-life-action'));
     });
   }
 
