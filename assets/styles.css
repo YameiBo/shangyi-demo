@@ -48,7 +48,7 @@
   --shadow-md: 0 2px 8px rgba(29, 33, 41, 0.06);
   --shadow-lg: 0 4px 16px rgba(29, 33, 41, 0.08);
 
-  --sidebar-w: 232px;
+  --sidebar-w: 300px;
   --sidebar-w-collapsed: 64px;
   --header-h: 56px;
 
@@ -119,11 +119,12 @@ ul { list-style: none; }
 }
 
 .sidebar-title {
-  font-size: 13px;
+  font-size: 28px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.2;
   color: var(--text-primary);
   letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .sidebar-collapse-btn {
