@@ -93,6 +93,9 @@
   .dq-diff-title { font-weight: 600; margin-bottom: 4px; }
   .dq-check-progress { padding: 4px 0 14px; }
   .dq-modal-note { margin-top: 12px; font-size: 12px; color: var(--text-tertiary); line-height: 1.7; }
+  .dq-modal-feedback { display: flex; gap: 9px; align-items: flex-start; margin-top: 14px; padding: 10px 12px; border: 1px solid #B8F0C2; border-radius: 8px; background: var(--success-bg); color: #00892A; font-size: 12.5px; line-height: 1.7; }
+  .dq-modal-feedback.info { border-color: var(--primary-100); background: var(--primary-50); color: var(--primary-dark); }
+  .dq-modal-feedback b { font-weight: 600; }
   .dq-task-mini { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--border-light); font-size: 12.5px; }
   .dq-task-mini:last-child { border-bottom: none; }
   .dq-task-mini span { color: var(--text-tertiary); }
@@ -1052,6 +1055,33 @@
     ov.classList.remove('show');
     setTimeout(function () { root.innerHTML = ''; }, 180);
   }
+  function dqModalFeedback(root, msg, type) {
+    root = root || document.getElementById('pm-modal-root');
+    if (!root) return;
+    var body = root.querySelector('.modal-body');
+    if (!body) return;
+    var box = body.querySelector('.dq-modal-feedback');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'dq-modal-feedback';
+      body.appendChild(box);
+    }
+    box.className = 'dq-modal-feedback' + (type === 'info' ? ' info' : '');
+    box.innerHTML = '<span>' + (type === 'info' ? 'ℹ' : '✓') + '</span><div>' + msg + '</div>';
+    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  (function () {
+    var base = window.showToast;
+    if (!base) return;
+    window.showToast = function (msg, type) {
+      var root = document.getElementById('pm-modal-root');
+      if (root && root.querySelector('.modal-overlay.show') && (type === 'success' || type === 'info' || !type)) {
+        dqModalFeedback(root, msg, type === 'info' ? 'info' : 'success');
+        return;
+      }
+      return base(msg, type);
+    };
+  })();
 
   /* ---------- 开关 ---------- */
   document.addEventListener('click', function (e) {
@@ -1654,15 +1684,15 @@
           '<button class="btn btn-primary" id="dq-plan-dispatch">下发质控任务</button>',
         onMount: function (root) {
           root.querySelector('#dq-plan-export').addEventListener('click', function () {
-            window.showToast('个性化质控计划已导出为 PDF', 'success');
+            dqModalFeedback(root, '个性化质控计划已导出为 PDF');
           });
           root.querySelector('#dq-plan-dispatch').addEventListener('click', function () {
-            window.showToast('已下发 ' + rows.length + ' 项质控任务至责任人，计划 ' + planId + ' 生效', 'success');
-            close();
+            dqModalFeedback(root, '已下发 ' + rows.length + ' 项质控任务至责任人，计划 ' + planId + ' 生效');
+            var b = root.querySelector('#dq-plan-dispatch');
+            if (b) { b.disabled = true; b.textContent = '已下发'; }
           });
         }
       });
-      window.showToast('已生成「' + type + ' / ' + source + ' / ' + age + ' / ' + use + '」个性化质控计划', 'success');
     });
   }
 
@@ -1715,8 +1745,20 @@
     ['QC-20241130-016', '分装量偏低原因分析', '周八', '剩余 3 天', '待派发'],
     ['QC-20241129-015', 'ULT-03 校准状态核查', '孙七', '剩余 1 天', '待验证'],
     ['QC-20241128-014', '伦理批件补齐与复核', '王静', '已超期 1 天', '进行中'],
-    ['QC-20241127-013', '数据备份完整性核查', '系统', '剩余 4 天', '进行中']
+    ['QC-20241127-013', '数据备份完整性核查', '系统', '剩余 4 天', '进行中'],
+    ['QC-20241202-026', '样本分装量复核', '周八', '剩余 2 天', '进行中'],
+    ['QC-20241202-027', '储存温度趋势分析', '孙七', '剩余 3 天', '进行中'],
+    ['QC-20241203-028', '知情同意信息复核', '李慧', '剩余 4 天', '待验证'],
+    ['QC-20241203-029', '设备校准记录补录', '孙七', '剩余 5 天', '进行中'],
+    ['QC-20241204-030', '样本追溯链修复', '王静', '剩余 2 天', '进行中'],
+    ['QC-20241204-031', '质控报告数据核对', '陈洁', '剩余 3 天', '待派发']
   ];
+
+  function dqNow() {
+    var d = new Date();
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
 
   function dqModalTag(text, cls) { return '<span class="tag ' + cls + '">' + text + '</span>'; }
 
@@ -1741,7 +1783,7 @@
       footer: '<button class="btn" data-pm-close>关闭</button>' + (r.action ? '<button class="btn btn-primary" id="dq-comp-action">生成整改任务</button>' : ''),
       onMount: function (root) {
         var b = root.querySelector('#dq-comp-action');
-        if (b) b.addEventListener('click', function () { window.showToast('已生成 ' + r.id + ' 的合规整改任务', 'success'); close(); });
+        if (b) b.addEventListener('click', function () { dqModalFeedback(root, '已生成 ' + r.id + ' 的合规整改任务'); b.disabled = true; b.textContent = '已生成'; });
       }
     });
   }
@@ -1771,7 +1813,7 @@
             var res = root.querySelector('#dq-cc-result'); if (res) res.style.display = '';
           }
         }, 300);
-        root.querySelector('#dq-cc-export').addEventListener('click', function () { window.showToast('合规核查结果已导出（Excel）', 'success'); });
+        root.querySelector('#dq-cc-export').addEventListener('click', function () { dqModalFeedback(root, '合规核查结果已导出（Excel）', 'info'); });
       }
     });
   }
@@ -1788,7 +1830,7 @@
     modal({ title: '智能质控建议依据', sub: r.id + ' · ' + r.risk + '风险', size: 'modal-lg', body: body,
       footer: '<button class="btn" data-pm-close>关闭</button><button class="btn btn-primary" id="dq-evidence-task">生成质控任务</button>',
       onMount: function (root) {
-        root.querySelector('#dq-evidence-task').addEventListener('click', function () { window.showToast('已为 ' + r.id + ' 生成质控任务', 'success'); close(); });
+        root.querySelector('#dq-evidence-task').addEventListener('click', function () { dqModalFeedback(root, '已为 ' + r.id + ' 生成质控任务，事件管控中心已记录'); var b = root.querySelector('#dq-evidence-task'); if (b) { b.disabled = true; b.textContent = '已生成'; } });
       }
     });
   }
@@ -1802,10 +1844,17 @@
       footer: '<button class="btn" data-pm-close>取消</button><button class="btn btn-primary" id="dq-dispatch-confirm">确认派发</button>',
       onMount: function (root) {
         root.querySelector('#dq-dispatch-confirm').addEventListener('click', function () {
+          if (window.EVENT_STORE) {
+            var events = DQ_DISPATCH.map(function (t, i) {
+              return { id: 'EV-QC-' + Date.now() + '-' + i, title: t[1], type: '质控任务', pri: '中', owner: t[2], due: t[3], progress: 0, status: 'assigned', desc: '质控任务 ' + t[0] + ' 已自动派发，待责任人处理', source: '样本数据质控 · 自动派发', clause: '—' };
+            });
+            window.EVENT_STORE.add(events);
+          }
           var p = document.getElementById('dq-task-pending'); if (p) p.textContent = '0';
           var d = document.getElementById('dq-task-doing'); if (d) d.textContent = '20';
-          window.showToast('已自动派发 8 项质控任务，责任人将在 5 分钟内收到通知', 'success');
-          close();
+          dqModalFeedback(root, '已自动派发 ' + DQ_DISPATCH.length + ' 项质控任务，事件管控中心事项列表已同步。');
+          var b = root.querySelector('#dq-dispatch-confirm');
+          if (b) { b.disabled = true; b.textContent = '已派发'; }
         });
       }
     });
@@ -1820,8 +1869,23 @@
       footer: '<button class="btn" data-pm-close>取消</button><button class="btn btn-primary" id="dq-urge-confirm">发送催办</button>',
       onMount: function (root) {
         root.querySelector('#dq-urge-confirm').addEventListener('click', function () {
-          window.showToast('已向 12 项任务的责任人发送催办提醒', 'info');
-          close();
+          if (window.REMINDER_STORE) {
+            DQ_URGE.forEach(function (t, i) {
+              window.REMINDER_STORE.add({
+                id: 'RM-QC-' + Date.now() + '-' + i,
+                title: '催办提醒 · ' + t[1],
+                type: '任务',
+                owner: t[2],
+                time: dqNow(),
+                level: 'warning',
+                read: false,
+                desc: '质控任务 ' + t[0] + ' ' + t[3] + '（' + t[4] + '），请尽快处理'
+              });
+            });
+          }
+          dqModalFeedback(root, '已发送 ' + DQ_URGE.length + ' 条催办提醒，事件管控中心「我的提醒事项」已同步。', 'info');
+          var b = root.querySelector('#dq-urge-confirm');
+          if (b) { b.disabled = true; b.textContent = '已发送'; }
         });
       }
     });
@@ -1852,7 +1916,7 @@
             var res = root.querySelector('#dq-docs-result'); if (res) res.style.display = '';
           }
         }, 300);
-        root.querySelector('#dq-docs-export').addEventListener('click', function () { window.showToast('文件校验报告已导出（Excel）', 'success'); });
+        root.querySelector('#dq-docs-export').addEventListener('click', function () { dqModalFeedback(root, '文件校验报告已导出（Excel）', 'info'); });
       }
     });
   }
@@ -1885,8 +1949,17 @@
       footer: '<button class="btn" data-pm-close>取消</button><button class="btn btn-primary" id="dq-doc-revise-confirm">生成修订任务</button>',
       onMount: function (root) {
         root.querySelector('#dq-doc-revise-confirm').addEventListener('click', function () {
-          window.showToast('已生成「' + f.name + '」修订任务，并派发至文件责任人', 'success');
-          close();
+          var owner = f.name.indexOf('知情同意') >= 0 ? '王静' : (f.name.indexOf('设备') >= 0 ? '孙七' : '周涛');
+          if (window.EVENT_STORE) {
+            window.EVENT_STORE.add({
+              id: 'EV-DOC-' + Date.now(), title: '文件修订 · ' + f.name, type: '文件修订', pri: '中',
+              owner: owner, due: '2026-11-15', progress: 0, status: 'assigned',
+              desc: f.issue + '；依据 ' + f.clauses, source: '样本数据质控 · 文件校验', clause: f.clauses
+            });
+          }
+          dqModalFeedback(root, '已生成「' + f.name + '」修订任务，事件管控中心已新增修订事项。');
+          var b = root.querySelector('#dq-doc-revise-confirm');
+          if (b) { b.disabled = true; b.textContent = '已生成'; }
         });
       }
     });
@@ -1901,8 +1974,15 @@
       footer: '<button class="btn" data-pm-close>取消</button><button class="btn btn-primary" id="dq-docs-task-confirm">生成并派发</button>',
       onMount: function (root) {
         root.querySelector('#dq-docs-task-confirm').addEventListener('click', function () {
-          window.showToast('已生成 7 项管理文件修订任务，并派发至文件责任人', 'success');
-          close();
+          if (window.EVENT_STORE) {
+            var events = DQ_REVISIONS.map(function (r, i) {
+              return { id: 'EV-DOC-' + Date.now() + '-' + i, title: '修订 · ' + r[0], type: '文件修订', pri: '中', owner: r[2], due: r[3], progress: 0, status: 'assigned', desc: r[1], source: '样本数据质控 · 一键生成修订任务', clause: '—' };
+            });
+            window.EVENT_STORE.add(events);
+          }
+          dqModalFeedback(root, '已生成 ' + DQ_REVISIONS.length + ' 项管理文件修订任务，事件管控中心事项列表已同步。');
+          var b = root.querySelector('#dq-docs-task-confirm');
+          if (b) { b.disabled = true; b.textContent = '已派发'; }
         });
       }
     });
@@ -2139,6 +2219,44 @@
     }
   };
 
+  function openCloseVerify(id, t) {
+    var body = '<div class="pm-desc-list">' +
+      '<div class="pm-desc-row"><span class="k">任务编号</span><span class="v">' + id + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">任务</span><span class="v">' + t.name + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">责任人</span><span class="v">' + t.owner + '</span></div>' +
+      '<div class="pm-desc-row"><span class="k">截止时间</span><span class="v">' + t.due + '</span></div>' +
+      '</div>' +
+      '<div style="margin-top:12px;">' +
+      '<div class="form-item full"><label class="form-label">验证结论</label><select class="select" id="dq-verify-result"><option>通过</option><option>有条件通过</option><option>不通过</option></select></div>' +
+      '<div class="form-item full"><label class="form-label">验证说明</label><textarea class="input" id="dq-verify-note" rows="3" style="height:auto;padding:8px 12px;">已核查处理记录与证据材料，整改措施有效。</textarea></div>' +
+      '<div class="form-item full"><label class="form-label">证据附件</label><input class="input" value="质控记录 / 设备校准证书 / 样本处理记录" readonly /></div>' +
+      '</div>';
+    modal({
+      title: '闭环验证 · ' + id,
+      sub: t.name,
+      size: 'modal-lg',
+      body: body,
+      footer: '<button class="btn" data-pm-close>取消</button><button class="btn btn-primary" id="dq-verify-submit">提交验证</button>',
+      onMount: function (root) {
+        root.querySelector('#dq-verify-submit').addEventListener('click', function () {
+          var result = root.querySelector('#dq-verify-result').value;
+          var note = root.querySelector('#dq-verify-note').value.trim();
+          if (window.EVENT_STORE) {
+            window.EVENT_STORE.add({
+              id: 'EV-QC-VERIFY-' + Date.now(), title: '闭环验证 · ' + t.name, type: '质控任务', pri: '中',
+              owner: '质量负责人', due: t.due, progress: 90, status: 'doing',
+              desc: '质控任务 ' + id + ' 已提交闭环验证；结论：' + result + '；说明：' + note,
+              source: '样本数据质控 · 闭环验证', clause: '—'
+            });
+          }
+          dqModalFeedback(root, '已提交闭环验证，事件管控中心已生成待确认事项。');
+          var b = root.querySelector('#dq-verify-submit');
+          if (b) { b.disabled = true; b.textContent = '已提交'; }
+        });
+      }
+    });
+  }
+
   document.querySelectorAll('[data-dq-task]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.getAttribute('data-dq-task');
@@ -2166,10 +2284,7 @@
           (t.status === '已闭环' ? '' : '<button class="btn btn-primary" id="dq-task-close">提交闭环验证</button>'),
         onMount: function (root) {
           var b = root.querySelector('#dq-task-close');
-          if (b) b.addEventListener('click', function () {
-            window.showToast(id + ' 已提交闭环验证，等待质量负责人确认', 'success');
-            close();
-          });
+          if (b) b.addEventListener('click', function () { openCloseVerify(id, t); });
         }
       });
     });
