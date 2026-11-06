@@ -99,7 +99,7 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 5px;
   padding: 14px 12px;
   border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
