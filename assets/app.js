@@ -3087,7 +3087,7 @@ window.demoDownloadFile = function (filename, content, mime) {
     var body;
     var mime;
     if (isWord) {
-      body = '<html><head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title></head><body><h2>' + escapeHtml(title) + ' · ' + escapeHtml(text) + '</h2>' + toHtmlTable(rows) + '<p style="margin-top:16px;color:#86909C;font-size:12px;">由上医科研样本库信息化平台导出（演示数据）</p></body></html>';
+      body = '<html><head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title></head><body><h2>' + escapeHtml(title) + ' · ' + escapeHtml(text) + '</h2>' + toHtmlTable(rows) + '<p style="margin-top:16px;color:#86909C;font-size:12px;">由样本库智能知识质量管理平台导出（演示数据）</p></body></html>';
       mime = 'application/msword;charset=utf-8';
     } else if (isJson) {
       body = JSON.stringify({ page: title, action: text, exportedAt: new Date().toISOString(), rows: rows }, null, 2);
